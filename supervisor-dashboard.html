@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Supervisor Dashboard — Parliament of Kenya</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="api.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--green:#2e7d32;--green-dark:#1b5e20;--red:#c62828;--gold:#C9A84C;--cream:#f5f6f8;--white:#fff;--border:#d1d9e6;--text:#1a2332;--text-mid:#3d4a5c;--text-light:#6b7a8d;--sidebar:240px}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+.flag{display:flex;height:4px}.flag span:nth-child(1){background:#000;flex:1}.flag span:nth-child(2){background:var(--red);flex:2}.flag span:nth-child(3){background:#fff;flex:1}.flag span:nth-child(4){background:var(--green);flex:2}.flag span:nth-child(5){background:#000;flex:1}
+.layout{display:flex;flex:1}
+.sidebar{width:var(--sidebar);background:var(--navy);display:flex;flex-direction:column;position:fixed;top:4px;left:0;bottom:0;z-index:100;overflow-y:auto}
+.sb-brand{padding:1.25rem 1rem;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:.75rem}
+.sb-icon{width:36px;height:36px;border-radius:50%;background:rgba(201,168,76,.2);border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+.sb-title{font-size:.8rem;font-weight:700;color:#fff}.sb-sub{font-size:.65rem;color:rgba(255,255,255,.45)}
+.sb-user{padding:1rem;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:.75rem}
+.sb-avatar{width:38px;height:38px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;flex-shrink:0}
+.sb-name{font-size:.82rem;font-weight:600;color:#fff}.sb-role{font-size:.68rem;color:rgba(255,255,255,.45)}
+.sb-nav{padding:.75rem 0;flex:1}
+.sb-section{font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.3);padding:.5rem 1rem .25rem}
+.sb-link{display:flex;align-items:center;gap:.65rem;padding:.6rem 1rem;color:rgba(255,255,255,.65);font-size:.83rem;font-weight:500;cursor:pointer;transition:background .15s;border-left:3px solid transparent;text-decoration:none}
+.sb-link:hover{background:rgba(255,255,255,.06);color:#fff}.sb-link.active{background:rgba(255,255,255,.1);color:#fff;border-left-color:var(--gold)}
+.sb-link-icon{width:18px;text-align:center}.badge-count{background:var(--red);color:#fff;font-size:.65rem;font-weight:700;padding:1px 6px;border-radius:20px;margin-left:auto}
+.sb-bottom{padding:1rem;border-top:1px solid rgba(255,255,255,.08)}
+.sb-logout{width:100%;padding:.55rem;background:rgba(198,40,40,.15);color:#ef9a9a;border:1px solid rgba(198,40,40,.3);border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit}
+.sb-logout:hover{background:rgba(198,40,40,.3)}
+.main{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column}
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:.85rem 1.5rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.topbar-title{font-family:'Playfair Display',serif;font-size:1.15rem;color:var(--navy)}
+.topbar-date{font-size:.78rem;color:var(--text-light)}
+.content{padding:1.5rem;flex:1}
+.page{display:none}.page.active{display:block}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+@media(max-width:900px){.grid-4{grid-template-columns:1fr 1fr}}
+.stat-card{background:var(--white);border-radius:8px;padding:1.25rem;border:1px solid var(--border);border-top:3px solid var(--navy)}
+.stat-card.green{border-top-color:var(--green)}.stat-card.gold{border-top-color:var(--gold)}.stat-card.red{border-top-color:var(--red)}
+.stat-num{font-family:'Playfair Display',serif;font-size:2rem;color:var(--navy);margin:.2rem 0}
+.stat-label{font-size:.72rem;color:var(--text-light);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.stat-sub{font-size:.75rem;color:var(--text-light);margin-top:.2rem}
+.section-card{background:var(--white);border:1px solid var(--border);border-radius:8px;margin-bottom:1.5rem}
+.section-head{padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
+.section-title{font-weight:700;font-size:.95rem;color:var(--text)}
+.section-body{padding:1.25rem}
+table{width:100%;border-collapse:collapse;font-size:.83rem}
+th{background:var(--cream);padding:.65rem .9rem;text-align:left;font-size:.72rem;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)}
+td{padding:.75rem .9rem;border-bottom:1px solid var(--border);color:var(--text-mid);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+.btn{padding:.55rem 1.1rem;border-radius:6px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit;border:none;transition:background .2s}
+.btn-green{background:var(--green);color:#fff}.btn-green:hover{background:var(--green-dark)}
+.btn-navy{background:var(--navy);color:#fff}.btn-navy:hover{background:#132d54}
+.btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--text-mid)}.btn-outline:hover{border-color:var(--navy);color:var(--navy)}
+.btn-sm{padding:.35rem .75rem;font-size:.75rem}
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700}
+.badge.pending{background:#fff8e1;color:#f57f17;border:1px solid #ffe082}
+.badge.reviewed{background:#e8f5e9;color:var(--green);border:1px solid #c8e6c9}
+.badge.active{background:#e3f2fd;color:#1565c0;border:1px solid #bbdefb}
+.badge.completed{background:#f3e5f5;color:#6a1b9a;border:1px solid #e1bee7}
+.badge.needs_revision{background:#fef2f2;color:var(--red);border:1px solid #fecaca}
+.prog-track{height:6px;background:var(--cream);border-radius:20px;overflow:hidden;margin-top:.35rem}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--navy),var(--green));border-radius:20px;transition:width 1s ease;width:0}
+.assignee-card{border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:.75rem;display:flex;align-items:center;gap:1rem}
+.ac-avatar{width:40px;height:40px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
+.ac-name{font-weight:700;font-size:.9rem;color:var(--text)}
+.ac-detail{font-size:.75rem;color:var(--text-light);margin-top:2px}
+.ac-actions{margin-left:auto;display:flex;gap:.5rem;flex-wrap:wrap}
+.modal-overlay{position:fixed;inset:0;background:rgba(26,42,51,.55);backdrop-filter:blur(3px);z-index:200;display:flex;align-items:center;justify-content:center;padding:1rem;opacity:0;pointer-events:none;transition:opacity .25s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--white);border-radius:8px;width:100%;max-width:500px;box-shadow:0 20px 60px rgba(0,0,0,.2);overflow:hidden}
+.modal-head{background:var(--navy);padding:1.1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.modal-head h3{color:#fff;font-size:.95rem;font-weight:700}
+.modal-close{background:none;border:none;color:rgba(255,255,255,.6);font-size:1.2rem;cursor:pointer}.modal-close:hover{color:#fff}
+.modal-body{padding:1.5rem}
+.modal-footer{padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:.75rem;justify-content:flex-end}
+.field{margin-bottom:1rem}
+.field label{display:block;font-size:.78rem;font-weight:600;color:var(--text-mid);margin-bottom:.35rem}
+.field input,.field select,.field textarea{width:100%;padding:.65rem .85rem;border:1.5px solid var(--border);border-radius:6px;font-size:.87rem;font-family:inherit;color:var(--text);background:var(--white);outline:none}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--navy)}
+.field textarea{resize:vertical;min-height:80px}
+.stars{display:flex;gap:.35rem;font-size:1.4rem;cursor:pointer}
+.star{color:var(--border);transition:color .1s}.star.active{color:var(--gold)}
+.alert{border-radius:6px;padding:.75rem 1rem;font-size:.83rem;margin-bottom:1rem;display:none}
+.alert.show{display:block}.alert.error{background:#fef2f2;color:var(--red);border:1px solid #fecaca}
+.alert.success{background:#f0fdf4;color:var(--green-dark);border:1px solid #bbf7d0}
+.empty{text-align:center;padding:2.5rem;color:var(--text-light);font-size:.88rem}
+.empty-icon{font-size:2.5rem;margin-bottom:.75rem}
+.loading{text-align:center;padding:2rem;color:var(--text-light)}
+</style>
+</head>
+<body>
+<div class="flag"><span></span><span></span><span></span><span></span><span></span></div>
+<div class="layout">
+<aside class="sidebar">
+  <div class="sb-brand"><div class="sb-icon">🏛️</div><div><div class="sb-title">Parliament of Kenya</div><div class="sb-sub">Supervisor Portal</div></div></div>
+  <div class="sb-user"><div class="sb-avatar" id="sbAvatar">?</div><div><div class="sb-name" id="sbName">Loading…</div><div class="sb-role" id="sbDept">Supervisor</div></div></div>
+  <nav class="sb-nav">
+    <div class="sb-section">Dashboard</div>
+    <a class="sb-link active" onclick="showPage('overview',this)"><span class="sb-link-icon">🏠</span> Overview</a>
+    <a class="sb-link" onclick="showPage('assignees',this)"><span class="sb-link-icon">👥</span> My Assignees</a>
+    <a class="sb-link" onclick="showPage('logs',this)"><span class="sb-link-icon">📋</span> Task Logs <span class="badge-count" id="pendingBadge">0</span></a>
+    <a class="sb-link" onclick="showPage('evaluations',this)"><span class="sb-link-icon">⭐</span> Evaluations</a>
+  </nav>
+  <div class="sb-bottom"><button class="sb-logout" onclick="logout()">Sign Out</button></div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="pageTitle">Overview</div>
+    <div class="topbar-date" id="topDate"></div>
+  </div>
+  <div class="content">
+
+    <!-- OVERVIEW -->
+    <div class="page active" id="page-overview">
+      <div class="grid-4">
+        <div class="stat-card"><div class="stat-label">Active Assignees</div><div class="stat-num" id="s-active">—</div><div class="stat-sub">Under my supervision</div></div>
+        <div class="stat-card gold"><div class="stat-label">Pending Logs</div><div class="stat-num" id="s-pending">—</div><div class="stat-sub">Awaiting review</div></div>
+        <div class="stat-card red"><div class="stat-label">Expiring Soon</div><div class="stat-num" id="s-expiring">—</div><div class="stat-sub">This month</div></div>
+        <div class="stat-card green"><div class="stat-label">Evaluations</div><div class="stat-num" id="s-evals">—</div><div class="stat-sub">Submitted</div></div>
+      </div>
+      <div class="section-card">
+        <div class="section-head"><div class="section-title">My Assignees</div><button class="btn btn-outline btn-sm" onclick="showPage('assignees',null)">View All</button></div>
+        <div class="section-body" id="overviewAssignees"><div class="loading">Loading…</div></div>
+      </div>
+      <div class="section-card">
+        <div class="section-head"><div class="section-title">Pending Task Logs</div><button class="btn btn-outline btn-sm" onclick="showPage('logs',null)">View All</button></div>
+        <div class="section-body" id="overviewLogs"><div class="loading">Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- ASSIGNEES -->
+    <div class="page" id="page-assignees">
+      <div class="section-card">
+        <div class="section-head">
+          <div class="section-title">My Assignees</div>
+          <select onchange="loadAssignees(this.value)" style="padding:.45rem .85rem;border:1.5px solid var(--border);border-radius:6px;font-size:.82rem;font-family:inherit">
+            <option value="">All</option><option value="?status=active">Active</option><option value="?status=completed">Completed</option>
+          </select>
+        </div>
+        <div class="section-body" id="assigneesBody"><div class="loading">Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- TASK LOGS -->
+    <div class="page" id="page-logs">
+      <div class="section-card">
+        <div class="section-head">
+          <div class="section-title">Task Logs</div>
+          <select onchange="loadLogs(this.value)" style="padding:.45rem .85rem;border:1.5px solid var(--border);border-radius:6px;font-size:.82rem;font-family:inherit">
+            <option value="?status=pending">Pending Review</option><option value="?status=reviewed">Reviewed</option><option value="">All</option>
+          </select>
+        </div>
+        <div class="section-body" id="logsBody"><div class="loading">Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- EVALUATIONS -->
+    <div class="page" id="page-evaluations">
+      <div class="section-card">
+        <div class="section-head">
+          <div class="section-title">Evaluations</div>
+          <button class="btn btn-green btn-sm" onclick="openNewEval()">+ New Evaluation</button>
+        </div>
+        <div class="section-body" id="evalsBody"><div class="loading">Loading…</div></div>
+      </div>
+    </div>
+
+  </div>
+</main>
+</div>
+
+<!-- REVIEW LOG MODAL -->
+<div class="modal-overlay" id="reviewModal">
+  <div class="modal">
+    <div class="modal-head"><h3>📋 Review Task Log</h3><button class="modal-close" onclick="closeModal('reviewModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="reviewLogId">
+      <div id="reviewLogDetail" style="margin-bottom:1rem;background:var(--cream);border-radius:6px;padding:1rem;font-size:.83rem;color:var(--text-mid);line-height:1.65"></div>
+      <div class="field"><label>Your Feedback</label><textarea id="reviewFeedback" placeholder="Write your feedback on this task log…"></textarea></div>
+      <div class="field"><label>Review Status</label>
+        <select id="reviewStatus">
+          <option value="reviewed">✅ Reviewed — Approved</option>
+          <option value="needs_revision">🔄 Needs Revision</option>
+        </select>
+      </div>
+      <div class="alert" id="reviewAlert"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('reviewModal')">Cancel</button>
+      <button class="btn btn-green" onclick="submitReview()">Submit Review</button>
+    </div>
+  </div>
+</div>
+
+<!-- EVALUATION MODAL -->
+<div class="modal-overlay" id="evalModal">
+  <div class="modal">
+    <div class="modal-head"><h3>⭐ New Evaluation</h3><button class="modal-close" onclick="closeModal('evalModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="alert" id="evalAlert"></div>
+      <div class="field"><label>Student / Intern</label><select id="evalInternId"><option value="">— Select —</option></select></div>
+      <div class="field"><label>Evaluation Period</label><input type="text" id="evalPeriod" placeholder="e.g. Week 3 Evaluation"></div>
+      <div style="margin-bottom:1rem">
+        <div style="font-size:.78rem;font-weight:600;color:var(--text-mid);margin-bottom:.75rem">Ratings (1–5 stars)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          ${['punctuality','technical','communication','initiative'].map(r=>`
+          <div><div style="font-size:.75rem;color:var(--text-light);text-transform:capitalize;margin-bottom:.3rem">${r}</div>
+          <div class="stars" id="stars-${r}" data-field="${r}" data-val="0">
+            ${[1,2,3,4,5].map(n=>`<span class="star" data-n="${n}" onclick="rateStar(this,'${r}')">★</span>`).join('')}
+          </div><input type="hidden" id="rating-${r}" value="0"></div>`).join('')}
+        </div>
+      </div>
+      <div class="field"><label>Comments</label><textarea id="evalComments" placeholder="Detailed evaluation comments…"></textarea></div>
+      <div class="field"><label>Recommendation</label>
+        <select id="evalRec">
+          <option>Positive — Continue as planned</option>
+          <option>Good — Minor improvements needed</option>
+          <option>Satisfactory — Needs more effort</option>
+          <option>Unsatisfactory — Significant improvement required</option>
+          <option>Extension Recommended</option>
+          <option>Early Completion Recommended</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('evalModal')">Cancel</button>
+      <button class="btn btn-green" onclick="submitEval()">Submit Evaluation</button>
+    </div>
+  </div>
+</div>
+
+<!-- EXTEND MODAL -->
+<div class="modal-overlay" id="extendModal">
+  <div class="modal">
+    <div class="modal-head"><h3>📅 Request Extension</h3><button class="modal-close" onclick="closeModal('extendModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="extendId">
+      <div id="extendDetail" style="margin-bottom:1rem;background:var(--cream);border-radius:6px;padding:.75rem;font-size:.83rem"></div>
+      <div class="field"><label>Reason for Extension</label><textarea id="extendReason" placeholder="Why is this intern's period being extended?"></textarea></div>
+      <div class="alert" id="extendAlert"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('extendModal')">Cancel</button>
+      <button class="btn btn-navy" onclick="submitExtension()">Grant 1-Month Extension</button>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!requireAuth('supervisor')) return;
+  document.getElementById('topDate').textContent = new Date().toLocaleDateString('en-KE',{weekday:'short',day:'numeric',month:'long',year:'numeric'});
+  const u = getUser();
+  document.getElementById('sbAvatar').textContent = (u.firstName[0]+u.lastName[0]).toUpperCase();
+  document.getElementById('sbName').textContent = `${u.firstName} ${u.lastName}`;
+  document.getElementById('sbDept').textContent = u.department || 'Supervisor';
+  loadOverview();
+});
+
+const pageTitles = {overview:'Overview',assignees:'My Assignees',logs:'Task Logs',evaluations:'Evaluations'};
+function showPage(id, link) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sb-link').forEach(l=>l.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(link) link.classList.add('active');
+  document.getElementById('pageTitle').textContent = pageTitles[id]||id;
+  if(id==='assignees')   loadAssignees();
+  if(id==='logs')        loadLogs('?status=pending');
+  if(id==='evaluations') loadEvals();
+}
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+async function loadOverview() {
+  const statsRes = await Sup.stats();
+  if(statsRes?.ok) {
+    const s = statsRes.data.data;
+    document.getElementById('s-active').textContent   = s.active    ?? 0;
+    document.getElementById('s-pending').textContent  = s.pendingLogs ?? 0;
+    document.getElementById('s-expiring').textContent = s.expiring  ?? 0;
+    document.getElementById('s-evals').textContent    = s.evalCount ?? 0;
+    document.getElementById('pendingBadge').textContent = s.pendingLogs ?? 0;
+  }
+  // Assignees preview
+  const aRes = await Sup.assignees();
+  const aEl = document.getElementById('overviewAssignees');
+  const list = aRes?.data?.data || [];
+  if(list.length) {
+    aEl.innerHTML = list.slice(0,4).map(a => assigneeCard(a)).join('');
+  } else {
+    aEl.innerHTML = '<div class="empty"><div class="empty-icon">👥</div>No assignees yet.</div>';
+  }
+  // Pending logs preview
+  const lRes = await Logs.assignees('?status=pending&limit=5');
+  const lEl = document.getElementById('overviewLogs');
+  const logs = lRes?.data?.data || [];
+  if(logs.length) {
+    lEl.innerHTML = logsTable(logs);
+  } else {
+    lEl.innerHTML = '<div class="empty"><div class="empty-icon">📋</div>No pending logs to review.</div>';
+  }
+}
+
+function assigneeCard(a) {
+  const initials = (a.firstName[0]+a.lastName[0]).toUpperCase();
+  const p = (a.startDate && a.endDate) ? pct(a.startDate, a.endDate) : 0;
+  const dl = a.endDate ? daysLeft(a.endDate) : null;
+  return `<div class="assignee-card">
+    <div class="ac-avatar">${initials}</div>
+    <div style="flex:1">
+      <div class="ac-name">${esc(a.firstName)} ${esc(a.lastName)}</div>
+      <div class="ac-detail">${esc(a.role==='intern'?'Contract Intern':'Attachment Student')} · ${esc(a.department||'')}</div>
+      <div class="ac-detail">${fmt(a.startDate)} → ${fmt(a.endDate)} ${dl!==null?`· ${dl>0?dl+' days left':'Completed'}`:''}
+      </div>
+      <div class="prog-track"><div class="prog-fill" style="width:${p}%"></div></div>
+    </div>
+    <div class="ac-actions">
+      <span class="badge ${a.isActive?'active':'completed'}">${a.isActive?'Active':'Done'}</span>
+      ${a.isActive&&!a.isExtended?`<button class="btn btn-outline btn-sm" onclick="openExtend('${a._id}','${esc(a.firstName+' '+a.lastName)}','${fmt(a.endDate)}')">Extend</button>`:''}
+    </div>
+  </div>`;
+}
+
+function logsTable(logs) {
+  return `<table>
+    <thead><tr><th>Student</th><th>Date</th><th>Title</th><th>Category</th><th>Status</th><th></th></tr></thead>
+    <tbody>${logs.map(l=>`<tr>
+      <td style="font-weight:600">${l.user?esc(l.user.firstName+' '+l.user.lastName):'—'}</td>
+      <td style="font-size:.78rem">${fmt(l.date)}</td>
+      <td>${esc(l.title)}</td>
+      <td style="font-size:.78rem">${esc(l.category||'—')}</td>
+      <td><span class="badge ${l.status}">${l.status.replace('_',' ')}</span></td>
+      <td>${l.status==='pending'||l.status==='needs_revision'?`<button class="btn btn-navy btn-sm" onclick="openReview('${l._id}','${esc(l.title)}','${esc(l.completed)}','${esc(l.ongoing||'')}')">Review</button>`:'<span style="font-size:.75rem;color:var(--green)">✓ Done</span>'}</td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+async function loadAssignees(q='') {
+  const el = document.getElementById('assigneesBody');
+  el.innerHTML='<div class="loading">Loading…</div>';
+  const res = await Sup.assignees(q);
+  const list = res?.data?.data || [];
+  if(!list.length){ el.innerHTML='<div class="empty"><div class="empty-icon">👥</div>No assignees found.</div>'; return; }
+  el.innerHTML = list.map(a=>assigneeCard(a)).join('');
+}
+
+async function loadLogs(q='?status=pending') {
+  const el = document.getElementById('logsBody');
+  el.innerHTML='<div class="loading">Loading…</div>';
+  const res = await Logs.assignees(q);
+  const logs = res?.data?.data || [];
+  if(!logs.length){ el.innerHTML='<div class="empty"><div class="empty-icon">📋</div>No logs found.</div>'; return; }
+  el.innerHTML = logsTable(logs);
+}
+
+async function loadEvals() {
+  const el = document.getElementById('evalsBody');
+  el.innerHTML='<div class="loading">Loading…</div>';
+  const res = await Evals.submitted();
+  const list = res?.data?.data || [];
+  if(!list.length){ el.innerHTML='<div class="empty"><div class="empty-icon">⭐</div>No evaluations submitted yet.</div>'; return; }
+  el.innerHTML=`<table>
+    <thead><tr><th>Student</th><th>Period</th><th>Recommendation</th><th>Date</th></tr></thead>
+    <tbody>${list.map(e=>`<tr>
+      <td style="font-weight:600">${e.intern?esc(e.intern.firstName+' '+e.intern.lastName):'—'}</td>
+      <td>${esc(e.period)}</td>
+      <td style="font-size:.8rem">${esc(e.recommendation)}</td>
+      <td style="font-size:.78rem">${fmt(e.createdAt)}</td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+// REVIEW
+function openReview(id, title, completed, ongoing) {
+  document.getElementById('reviewLogId').value = id;
+  document.getElementById('reviewFeedback').value = '';
+  document.getElementById('reviewLogDetail').innerHTML =
+    `<strong>${esc(title)}</strong><br><br><em>Completed:</em> ${esc(completed)}<br>${ongoing?`<em>Ongoing:</em> ${esc(ongoing)}`:''}`;
+  document.getElementById('reviewAlert').className='alert';
+  openModal('reviewModal');
+}
+async function submitReview() {
+  const id       = document.getElementById('reviewLogId').value;
+  const feedback = document.getElementById('reviewFeedback').value.trim();
+  const status   = document.getElementById('reviewStatus').value;
+  const al       = document.getElementById('reviewAlert');
+  if(!feedback){ al.className='alert error show'; al.textContent='Please write feedback before submitting.'; return; }
+  const res = await Logs.review(id, { feedback, status });
+  if(res?.ok){ closeModal('reviewModal'); toast('Review submitted ✓'); loadOverview(); if(document.getElementById('page-logs').classList.contains('active')) loadLogs(); }
+  else { al.className='alert error show'; al.textContent=res?.data?.message||'Failed to submit review.'; }
+}
+
+// EVALUATION
+async function openNewEval() {
+  const res = await Sup.assignees('?status=active');
+  const sel = document.getElementById('evalInternId');
+  sel.innerHTML='<option value="">— Select Assignee —</option>'+(res?.data?.data||[]).map(a=>`<option value="${a._id}">${esc(a.firstName+' '+a.lastName)}</option>`).join('');
+  document.getElementById('evalAlert').className='alert';
+  openModal('evalModal');
+}
+function rateStar(el, field) {
+  const n = +el.dataset.n;
+  document.getElementById('rating-'+field).value = n;
+  document.querySelectorAll(`#stars-${field} .star`).forEach(s=>{
+    s.classList.toggle('active', +s.dataset.n <= n);
+  });
+}
+async function submitEval() {
+  const al = document.getElementById('evalAlert');
+  const internId = document.getElementById('evalInternId').value;
+  const period   = document.getElementById('evalPeriod').value.trim();
+  const comments = document.getElementById('evalComments').value.trim();
+  const rec      = document.getElementById('evalRec').value;
+  const fields   = ['punctuality','technical','communication','initiative'];
+  const ratings  = {};
+  for(const f of fields) {
+    const v = +document.getElementById('rating-'+f).value;
+    if(!v){ al.className='alert error show'; al.textContent=`Please rate ${f}.`; return; }
+    ratings[f] = v;
+  }
+  if(!internId||!period||!comments){ al.className='alert error show'; al.textContent='Please fill in all fields.'; return; }
+  const res = await Evals.create({ internId, period, ratings, comments, recommendation: rec });
+  if(res?.ok){ closeModal('evalModal'); toast('Evaluation submitted ✓'); loadEvals(); }
+  else { al.className='alert error show'; al.textContent=res?.data?.message||'Failed to submit evaluation.'; }
+}
+
+// EXTENSION
+function openExtend(id, name, endDate) {
+  document.getElementById('extendId').value = id;
+  document.getElementById('extendDetail').textContent = `${name} — current end date: ${endDate}`;
+  document.getElementById('extendReason').value='';
+  document.getElementById('extendAlert').className='alert';
+  openModal('extendModal');
+}
+async function submitExtension() {
+  const id     = document.getElementById('extendId').value;
+  const reason = document.getElementById('extendReason').value.trim();
+  const al     = document.getElementById('extendAlert');
+  if(!reason){ al.className='alert error show'; al.textContent='Please provide a reason.'; return; }
+  const res = await Sup.extend(id, { reason });
+  if(res?.ok){ closeModal('extendModal'); toast('Extension granted ✓'); loadOverview(); loadAssignees(); }
+  else { al.className='alert error show'; al.textContent=res?.data?.message||'Failed to extend.'; }
+}
+</script>
+</body>
+</html>
