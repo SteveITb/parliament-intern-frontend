@@ -80,7 +80,7 @@ tr:last-child td{border-bottom:none}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--navy)}
 .field textarea{resize:vertical;min-height:80px}
 .stars{display:flex;gap:.35rem;font-size:1.4rem;cursor:pointer}
-.star{color:var(--border);transition:color .1s}.star.active{color:var(--gold)}
+.star{color:#ddd;transition:color .15s;cursor:pointer;user-select:none}.star:hover,.star.active{color:var(--gold)}
 .alert{border-radius:6px;padding:.75rem 1rem;font-size:.83rem;margin-bottom:1rem;display:none}
 .alert.show{display:block}.alert.error{background:#fef2f2;color:var(--red);border:1px solid #fecaca}
 .alert.success{background:#f0fdf4;color:var(--green-dark);border:1px solid #bbf7d0}
@@ -196,23 +196,69 @@ tr:last-child td{border-bottom:none}
 
 <!-- EVALUATION MODAL -->
 <div class="modal-overlay" id="evalModal">
-  <div class="modal">
+  <div class="modal" style="max-width:540px">
     <div class="modal-head"><h3>⭐ New Evaluation</h3><button class="modal-close" onclick="closeModal('evalModal')">✕</button></div>
-    <div class="modal-body">
+    <div class="modal-body" style="max-height:70vh;overflow-y:auto">
       <div class="alert" id="evalAlert"></div>
-      <div class="field"><label>Student / Intern</label><select id="evalInternId"><option value="">— Select —</option></select></div>
+      <div class="field"><label>Student / Intern</label><select id="evalInternId"><option value="">— Select Assignee —</option></select></div>
       <div class="field"><label>Evaluation Period</label><input type="text" id="evalPeriod" placeholder="e.g. Week 3 Evaluation"></div>
+
       <div style="margin-bottom:1rem">
-        <div style="font-size:.78rem;font-weight:600;color:var(--text-mid);margin-bottom:.75rem">Ratings (1–5 stars)</div>
+        <div style="font-size:.78rem;font-weight:600;color:var(--text-mid);margin-bottom:.85rem">Ratings (click stars to rate 1–5)</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
-          ${['punctuality','technical','communication','initiative'].map(r=>`
-          <div><div style="font-size:.75rem;color:var(--text-light);text-transform:capitalize;margin-bottom:.3rem">${r}</div>
-          <div class="stars" id="stars-${r}" data-field="${r}" data-val="0">
-            ${[1,2,3,4,5].map(n=>`<span class="star" data-n="${n}" onclick="rateStar(this,'${r}')">★</span>`).join('')}
-          </div><input type="hidden" id="rating-${r}" value="0"></div>`).join('')}
+
+          <div style="background:var(--cream);border-radius:6px;padding:.75rem">
+            <div style="font-size:.75rem;font-weight:600;color:var(--text-mid);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem">Punctuality</div>
+            <div style="display:flex;gap:.25rem;font-size:1.6rem;cursor:pointer" id="stars-punctuality">
+              <span class="star" data-n="1" onclick="rateStar(this,'punctuality')">★</span>
+              <span class="star" data-n="2" onclick="rateStar(this,'punctuality')">★</span>
+              <span class="star" data-n="3" onclick="rateStar(this,'punctuality')">★</span>
+              <span class="star" data-n="4" onclick="rateStar(this,'punctuality')">★</span>
+              <span class="star" data-n="5" onclick="rateStar(this,'punctuality')">★</span>
+            </div>
+            <input type="hidden" id="rating-punctuality" value="0">
+          </div>
+
+          <div style="background:var(--cream);border-radius:6px;padding:.75rem">
+            <div style="font-size:.75rem;font-weight:600;color:var(--text-mid);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem">Technical Skills</div>
+            <div style="display:flex;gap:.25rem;font-size:1.6rem;cursor:pointer" id="stars-technical">
+              <span class="star" data-n="1" onclick="rateStar(this,'technical')">★</span>
+              <span class="star" data-n="2" onclick="rateStar(this,'technical')">★</span>
+              <span class="star" data-n="3" onclick="rateStar(this,'technical')">★</span>
+              <span class="star" data-n="4" onclick="rateStar(this,'technical')">★</span>
+              <span class="star" data-n="5" onclick="rateStar(this,'technical')">★</span>
+            </div>
+            <input type="hidden" id="rating-technical" value="0">
+          </div>
+
+          <div style="background:var(--cream);border-radius:6px;padding:.75rem">
+            <div style="font-size:.75rem;font-weight:600;color:var(--text-mid);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem">Communication</div>
+            <div style="display:flex;gap:.25rem;font-size:1.6rem;cursor:pointer" id="stars-communication">
+              <span class="star" data-n="1" onclick="rateStar(this,'communication')">★</span>
+              <span class="star" data-n="2" onclick="rateStar(this,'communication')">★</span>
+              <span class="star" data-n="3" onclick="rateStar(this,'communication')">★</span>
+              <span class="star" data-n="4" onclick="rateStar(this,'communication')">★</span>
+              <span class="star" data-n="5" onclick="rateStar(this,'communication')">★</span>
+            </div>
+            <input type="hidden" id="rating-communication" value="0">
+          </div>
+
+          <div style="background:var(--cream);border-radius:6px;padding:.75rem">
+            <div style="font-size:.75rem;font-weight:600;color:var(--text-mid);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem">Initiative</div>
+            <div style="display:flex;gap:.25rem;font-size:1.6rem;cursor:pointer" id="stars-initiative">
+              <span class="star" data-n="1" onclick="rateStar(this,'initiative')">★</span>
+              <span class="star" data-n="2" onclick="rateStar(this,'initiative')">★</span>
+              <span class="star" data-n="3" onclick="rateStar(this,'initiative')">★</span>
+              <span class="star" data-n="4" onclick="rateStar(this,'initiative')">★</span>
+              <span class="star" data-n="5" onclick="rateStar(this,'initiative')">★</span>
+            </div>
+            <input type="hidden" id="rating-initiative" value="0">
+          </div>
+
         </div>
       </div>
-      <div class="field"><label>Comments</label><textarea id="evalComments" placeholder="Detailed evaluation comments…"></textarea></div>
+
+      <div class="field"><label>Comments</label><textarea id="evalComments" placeholder="Detailed evaluation comments…" style="min-height:90px"></textarea></div>
       <div class="field"><label>Recommendation</label>
         <select id="evalRec">
           <option>Positive — Continue as planned</option>
@@ -224,9 +270,9 @@ tr:last-child td{border-bottom:none}
         </select>
       </div>
     </div>
-    <div class="modal-footer">
+    <div class="modal-footer" style="border-top:1px solid var(--border);padding:1rem 1.5rem;display:flex;gap:.75rem;justify-content:flex-end;background:#fff;flex-shrink:0">
       <button class="btn btn-outline" onclick="closeModal('evalModal')">Cancel</button>
-      <button class="btn btn-green" onclick="submitEval()">Submit Evaluation</button>
+      <button class="btn btn-green" onclick="submitEval()">✓ Submit Evaluation</button>
     </div>
   </div>
 </div>
