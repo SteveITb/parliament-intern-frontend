@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Annual Reports — Parliament of Kenya Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="api.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#1a3a6b;--navy-dark:#132d54;--green:#2e7d32;--green-dark:#1b5e20;
+  --red:#c62828;--gold:#C9A84C;--gold-light:#f0c040;
+  --cream:#f5f6f8;--white:#fff;--border:#d1d9e6;
+  --text:#1a2332;--text-mid:#3d4a5c;--text-light:#6b7a8d;--sidebar:250px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+.flag{display:flex;height:4px}
+.flag span:nth-child(1){background:#000;flex:1}.flag span:nth-child(2){background:var(--red);flex:2}
+.flag span:nth-child(3){background:#fff;flex:1}.flag span:nth-child(4){background:var(--green);flex:2}
+.flag span:nth-child(5){background:#000;flex:1}
+.layout{display:flex;flex:1}
+/* SIDEBAR */
+.sidebar{width:var(--sidebar);background:var(--navy);display:flex;flex-direction:column;position:fixed;top:4px;left:0;bottom:0;z-index:100;overflow-y:auto}
+.sb-brand{padding:1.25rem 1rem;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:.75rem}
+.sb-logo{width:36px;height:36px;border-radius:50%;background:rgba(201,168,76,.2);border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+.sb-name{font-size:.8rem;font-weight:700;color:#fff}.sb-sub{font-size:.65rem;color:rgba(255,255,255,.4)}
+.sb-user{padding:1rem;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:.75rem}
+.sb-av{width:38px;height:38px;border-radius:50%;background:var(--gold);color:#1a2332;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;flex-shrink:0}
+.sb-un{font-size:.82rem;font-weight:600;color:#fff}.sb-ur{font-size:.68rem;color:rgba(255,255,255,.4)}
+.sb-nav{padding:.5rem 0;flex:1}
+.sb-a{display:flex;align-items:center;gap:.65rem;padding:.65rem 1rem;color:rgba(255,255,255,.62);font-size:.83rem;font-weight:500;cursor:pointer;border-left:3px solid transparent;transition:all .15s;text-decoration:none}
+.sb-a:hover{background:rgba(255,255,255,.06);color:#fff}
+.sb-a.active{background:rgba(255,255,255,.12);color:#fff;border-left-color:var(--gold);font-weight:600}
+.sb-ai{width:18px;text-align:center}
+.sb-bot{padding:1rem;border-top:1px solid rgba(255,255,255,.08)}
+.sb-lo{width:100%;padding:.55rem;background:rgba(198,40,40,.15);color:#ef9a9a;border:1px solid rgba(198,40,40,.3);border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit}
+.sb-lo:hover{background:rgba(198,40,40,.3)}
+/* MAIN */
+.main{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column}
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:.85rem 1.5rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.tb-title{font-family:'Playfair Display',serif;font-size:1.15rem;color:var(--navy)}
+.content{padding:1.5rem;flex:1}
+/* REPORT HEADER */
+.report-header{background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 60%,#2a5298 100%);border-radius:12px;padding:2rem;margin-bottom:1.5rem;color:#fff;position:relative;overflow:hidden}
+.report-header::before{content:'';position:absolute;right:-40px;top:-40px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}
+.report-header::after{content:'';position:absolute;right:40px;bottom:-60px;width:150px;height:150px;border-radius:50%;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.15)}
+.rh-top{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;position:relative;z-index:1}
+.rh-title{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:900;margin-bottom:.35rem}
+.rh-sub{font-size:.85rem;color:rgba(255,255,255,.6)}
+.rh-controls{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+.year-select{background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.25);color:#fff;padding:.6rem 1.1rem;border-radius:6px;font-size:.88rem;font-family:inherit;font-weight:600;cursor:pointer;outline:none}
+.year-select option{background:var(--navy-dark);color:#fff}
+.btn-generate{background:var(--gold);color:#1a2332;border:none;padding:.65rem 1.5rem;border-radius:6px;font-size:.88rem;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s}
+.btn-generate:hover{background:var(--gold-light)}
+.btn-print{background:rgba(255,255,255,.12);color:#fff;border:1.5px solid rgba(255,255,255,.25);padding:.65rem 1.25rem;border-radius:6px;font-size:.88rem;font-weight:600;cursor:pointer;font-family:inherit;transition:background .2s}
+.btn-print:hover{background:rgba(255,255,255,.2)}
+/* SUMMARY CARDS */
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+@media(max-width:1000px){.summary-grid{grid-template-columns:1fr 1fr}}
+.sum-card{background:var(--white);border-radius:10px;padding:1.35rem;border:1px solid var(--border);position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s}
+.sum-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(26,58,107,.1)}
+.sum-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.sum-card.navy::before{background:var(--navy)}.sum-card.green::before{background:var(--green)}
+.sum-card.gold::before{background:var(--gold)}.sum-card.red::before{background:var(--red)}
+.sum-card.purple::before{background:#6a1b9a}
+.sum-icon{font-size:1.75rem;margin-bottom:.5rem}
+.sum-num{font-family:'Playfair Display',serif;font-size:2.25rem;font-weight:900;color:var(--navy);line-height:1}
+.sum-label{font-size:.72rem;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.06em;margin-top:.35rem}
+.sum-sub{font-size:.75rem;color:var(--text-light);margin-top:.2rem}
+/* TWO COLUMN */
+.two-col{display:grid;grid-template-columns:3fr 2fr;gap:1.5rem;margin-bottom:1.5rem}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem;margin-bottom:1.5rem}
+@media(max-width:900px){.two-col,.three-col{grid-template-columns:1fr}}
+/* CARDS */
+.card{background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.card-head{padding:1.1rem 1.35rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-weight:700;font-size:.92rem;color:var(--text);display:flex;align-items:center;gap:.5rem}
+.card-body{padding:1.35rem}
+/* CHART */
+.chart-wrap{position:relative;height:280px}
+.chart-wrap-sm{position:relative;height:220px}
+/* DEPT TABLE */
+.dept-table{width:100%;border-collapse:collapse;font-size:.83rem}
+.dept-table th{background:var(--cream);padding:.6rem .9rem;text-align:left;font-size:.7rem;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)}
+.dept-table td{padding:.72rem .9rem;border-bottom:1px solid var(--border);vertical-align:middle}
+.dept-table tr:last-child td{border-bottom:none}
+.dept-table tr:hover td{background:#fafbfc}
+.dept-bar{height:6px;border-radius:20px;background:var(--navy);margin-top:4px;transition:width .8s ease}
+.badge-s{background:#f3e5f5;color:#6a1b9a;border:1px solid #e1bee7;padding:2px 8px;border-radius:20px;font-size:.7rem;font-weight:700}
+.badge-i{background:#fff3e0;color:#e65100;border:1px solid #ffe0b2;padding:2px 8px;border-radius:20px;font-size:.7rem;font-weight:700}
+/* GENDER DONUT */
+.gender-legend{display:flex;flex-direction:column;gap:.5rem;margin-top:1rem}
+.gender-item{display:flex;align-items:center;justify-content:space-between;font-size:.82rem}
+.gender-dot{width:10px;height:10px;border-radius:50%;margin-right:.5rem;flex-shrink:0}
+.gender-label{display:flex;align-items:center;color:var(--text-mid)}
+.gender-pct{font-weight:700;color:var(--text)}
+/* INSTITUTIONS */
+.inst-item{display:flex;align-items:center;gap:.75rem;padding:.55rem 0;border-bottom:1px solid var(--border)}
+.inst-item:last-child{border-bottom:none}
+.inst-rank{width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;flex-shrink:0}
+.inst-name{font-size:.82rem;color:var(--text-mid);flex:1}
+.inst-count{font-weight:700;font-size:.85rem;color:var(--navy)}
+/* FINANCIAL */
+.fin-row{display:flex;justify-content:space-between;align-items:center;padding:.65rem 0;border-bottom:1px solid var(--border);font-size:.85rem}
+.fin-row:last-child{border-bottom:none}
+.fin-label{color:var(--text-mid)}
+.fin-val{font-weight:700;color:var(--text)}
+.fin-val.green{color:var(--green)}
+.fin-val.red{color:var(--red)}
+.fin-total{background:var(--navy);color:#fff;border-radius:6px;padding:.75rem 1rem;display:flex;justify-content:space-between;align-items:center;margin-top:.75rem;font-weight:700}
+/* EMPTY */
+.empty-state{text-align:center;padding:3rem;color:var(--text-light)}
+.empty-icon{font-size:3rem;margin-bottom:1rem}
+.loading-state{text-align:center;padding:3rem;color:var(--text-light)}
+/* PRINT */
+@media print{
+  .sidebar,.topbar,.rh-controls,.btn-print,.btn-generate{display:none!important}
+  .main{margin-left:0}
+  .content{padding:0}
+  body{background:#fff}
+  .report-header{background:var(--navy)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .sum-card,.card{break-inside:avoid;border:1px solid #ddd}
+  .two-col,.three-col{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<div class="flag"><span></span><span></span><span></span><span></span><span></span></div>
+<div class="layout">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-brand"><div class="sb-logo">🏛️</div><div><div class="sb-name">Parliament of Kenya</div><div class="sb-sub">Admin Portal</div></div></div>
+  <div class="sb-user"><div class="sb-av" id="sbAv">?</div><div><div class="sb-un" id="sbName">Loading…</div><div class="sb-ur">System Administrator</div></div></div>
+  <nav class="sb-nav">
+    <a class="sb-a" href="admin-portal.html"><span class="sb-ai">🏠</span>Overview</a>
+    <a class="sb-a" href="admin-portal.html"><span class="sb-ai">👥</span>Attachees & Interns</a>
+    <a class="sb-a" href="admin-portal.html"><span class="sb-ai">🔗</span>Assign Supervisors</a>
+    <a class="sb-a" href="admin-portal.html"><span class="sb-ai">👔</span>Supervisors</a>
+    <a class="sb-a active" href="reports.html"><span class="sb-ai">📊</span>Annual Reports</a>
+    <a class="sb-a" href="admin-portal.html"><span class="sb-ai">💰</span>Payslips</a>
+  </nav>
+  <div class="sb-bot"><button class="sb-lo" onclick="logout()">Sign Out</button></div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="topbar">
+    <div class="tb-title">📊 Annual Reports & Data Analysis</div>
+    <div style="font-size:.78rem;color:var(--text-light)" id="tbDate"></div>
+  </div>
+
+  <div class="content" id="mainContent">
+
+    <!-- REPORT HEADER -->
+    <div class="report-header">
+      <div class="rh-top">
+        <div>
+          <div class="rh-title">Parliament of Kenya<br>Intern & Attachment Annual Report</div>
+          <div class="rh-sub">Data analysis for financial planning and departmental management</div>
+        </div>
+        <div class="rh-controls">
+          <select class="year-select" id="yearSelect"></select>
+          <button class="btn-generate" onclick="generateReport()">📊 Generate Report</button>
+          <button class="btn-print" onclick="window.print()">🖨️ Print / PDF</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORT BODY -->
+    <div id="reportBody">
+      <div class="empty-state">
+        <div class="empty-icon">📊</div>
+        <div style="font-size:.95rem;font-weight:600;color:var(--text-mid);margin-bottom:.5rem">Select a year and click Generate Report</div>
+        <div style="font-size:.83rem">The report will show all attachment students and interns, departmental breakdown, financial summary and more.</div>
+      </div>
+    </div>
+
+  </div>
+</main>
+</div>
+
+<script>
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DEPT_COLORS = ['#1a3a6b','#c62828','#2e7d32','#1a237e','#4a148c','#01579b','#004d40'];
+let charts = {};
+
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!requireAuth('admin')) return;
+  document.getElementById('tbDate').textContent = new Date().toLocaleDateString('en-KE',{weekday:'short',day:'numeric',month:'long',year:'numeric'});
+  const u = getUser();
+  document.getElementById('sbName').textContent = `${u.firstName} ${u.lastName}`;
+  document.getElementById('sbAv').textContent = (u.firstName[0]+u.lastName[0]).toUpperCase();
+  await loadYears();
+});
+
+async function loadYears() {
+  const res = await api('/reports/years');
+  const sel = document.getElementById('yearSelect');
+  const years = res?.data?.years || [new Date().getFullYear()];
+  years.forEach(y => {
+    const o = document.createElement('option');
+    o.value = y; o.textContent = y;
+    sel.appendChild(o);
+  });
+  // Auto-generate for current year
+  generateReport();
+}
+
+async function generateReport() {
+  const year = document.getElementById('yearSelect').value;
+  document.getElementById('reportBody').innerHTML = `<div class="loading-state"><div style="font-size:2rem;margin-bottom:1rem">⏳</div>Generating ${year} report…</div>`;
+
+  const res = await api(`/reports/annual?year=${year}`);
+  if (!res?.ok) {
+    document.getElementById('reportBody').innerHTML = `<div class="empty-state"><div class="empty-icon">❌</div>Failed to generate report. Please try again.</div>`;
+    return;
+  }
+
+  // Destroy old charts
+  Object.values(charts).forEach(c => c.destroy());
+  charts = {};
+
+  renderReport(res.data.data);
+}
+
+function renderReport(d) {
+  const totalAll = d.totalRegistered || 0;
+  const maxDept = Math.max(...d.deptBreakdown.map(x => x.total), 1);
+
+  document.getElementById('reportBody').innerHTML = `
+
+    <!-- SUMMARY CARDS -->
+    <div class="summary-grid">
+      <div class="sum-card navy">
+        <div class="sum-icon">🎓</div>
+        <div class="sum-num">${d.totalStudents}</div>
+        <div class="sum-label">Attachment Students</div>
+        <div class="sum-sub">Industrial attachment placements</div>
+      </div>
+      <div class="sum-card green">
+        <div class="sum-icon">💼</div>
+        <div class="sum-num">${d.totalInterns}</div>
+        <div class="sum-label">Contract Interns</div>
+        <div class="sum-sub">Paid internship positions</div>
+      </div>
+      <div class="sum-card gold">
+        <div class="sum-icon">✅</div>
+        <div class="sum-num">${d.totalRegistered}</div>
+        <div class="sum-label">Total Placements</div>
+        <div class="sum-sub">${d.completionRate}% completion rate</div>
+      </div>
+      <div class="sum-card purple">
+        <div class="sum-icon">🏢</div>
+        <div class="sum-num">7</div>
+        <div class="sum-label">Departments Covered</div>
+        <div class="sum-sub">${d.supervisors} active supervisors</div>
+      </div>
+    </div>
+
+    <!-- MONTHLY TREND + DEPT BREAKDOWN -->
+    <div class="two-col">
+      <div class="card">
+        <div class="card-head"><div class="card-title">📈 Monthly Intake — ${d.year}</div></div>
+        <div class="card-body"><div class="chart-wrap"><canvas id="monthlyChart"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div class="card-title">🍩 Type Distribution</div></div>
+        <div class="card-body">
+          <div class="chart-wrap-sm"><canvas id="typeChart"></canvas></div>
+          <div style="display:flex;gap:1.5rem;justify-content:center;margin-top:.75rem;font-size:.82rem">
+            <div style="display:flex;align-items:center;gap:.4rem"><span style="width:12px;height:12px;border-radius:50%;background:var(--navy);display:inline-block"></span> Students (${d.totalStudents})</div>
+            <div style="display:flex;align-items:center;gap:.4rem"><span style="width:12px;height:12px;border-radius:50%;background:var(--gold);display:inline-block"></span> Interns (${d.totalInterns})</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEPARTMENT BREAKDOWN -->
+    <div class="card" style="margin-bottom:1.5rem">
+      <div class="card-head">
+        <div class="card-title">🏢 Placement by Department — ${d.year}</div>
+        <div style="font-size:.78rem;color:var(--text-light)">${d.totalRegistered} total placements across 7 departments</div>
+      </div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:2rem">
+          <div>
+            <table class="dept-table">
+              <thead><tr><th>Department</th><th>Students</th><th>Interns</th><th>Total</th><th>Share</th></tr></thead>
+              <tbody>${d.deptBreakdown.map(dept => `
+                <tr>
+                  <td style="font-weight:600;color:var(--text)">${esc(dept.dept)}</td>
+                  <td><span class="badge-s">${dept.students}</span></td>
+                  <td><span class="badge-i">${dept.interns}</span></td>
+                  <td style="font-weight:700;color:var(--navy)">${dept.total}</td>
+                  <td style="min-width:80px">
+                    <div style="font-size:.75rem;color:var(--text-light)">${totalAll?Math.round((dept.total/totalAll)*100):0}%</div>
+                    <div class="dept-bar" style="width:${Math.round((dept.total/maxDept)*100)}%;max-width:100px"></div>
+                  </td>
+                </tr>`).join('')}
+              </tbody>
+              <tfoot><tr style="background:var(--cream)">
+                <td style="font-weight:700">TOTAL</td>
+                <td style="font-weight:700">${d.totalStudents}</td>
+                <td style="font-weight:700">${d.totalInterns}</td>
+                <td style="font-weight:700;color:var(--navy)">${d.totalRegistered}</td>
+                <td style="font-weight:700">100%</td>
+              </tr></tfoot>
+            </table>
+          </div>
+          <div><div class="chart-wrap"><canvas id="deptChart"></canvas></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GENDER + INSTITUTIONS + FINANCIAL -->
+    <div class="three-col">
+
+      <div class="card">
+        <div class="card-head"><div class="card-title">⚖️ Gender Breakdown</div></div>
+        <div class="card-body">
+          <div class="chart-wrap-sm"><canvas id="genderChart"></canvas></div>
+          <div class="gender-legend">
+            <div class="gender-item">
+              <div class="gender-label"><span class="gender-dot" style="background:#1a3a6b"></span>Male</div>
+              <div class="gender-pct">${d.gender.male} <span style="font-weight:400;color:var(--text-light)">(${totalAll?Math.round((d.gender.male/totalAll)*100):0}%)</span></div>
+            </div>
+            <div class="gender-item">
+              <div class="gender-label"><span class="gender-dot" style="background:#c62828"></span>Female</div>
+              <div class="gender-pct">${d.gender.female} <span style="font-weight:400;color:var(--text-light)">(${totalAll?Math.round((d.gender.female/totalAll)*100):0}%)</span></div>
+            </div>
+            <div class="gender-item">
+              <div class="gender-label"><span class="gender-dot" style="background:#9aa3b0"></span>Not specified</div>
+              <div class="gender-pct">${d.gender.other} <span style="font-weight:400;color:var(--text-light)">(${totalAll?Math.round((d.gender.other/totalAll)*100):0}%)</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div class="card-title">🎓 Top Institutions</div></div>
+        <div class="card-body">
+          ${d.institutions.length ? d.institutions.map((inst, i) => `
+            <div class="inst-item">
+              <div class="inst-rank">${i+1}</div>
+              <div class="inst-name">${esc(inst._id||'Unknown')}</div>
+              <div class="inst-count">${inst.count}</div>
+            </div>`).join('') :
+            '<div style="text-align:center;padding:1.5rem;color:var(--text-light)">No data</div>'}
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div class="card-title">💰 Financial Summary</div></div>
+        <div class="card-body">
+          <div style="font-size:.75rem;color:var(--text-light);margin-bottom:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Contract Interns — ${d.year}</div>
+          <div class="fin-row"><span class="fin-label">Total Gross Paid</span><span class="fin-val">KES ${(d.financial.totalPaid||0).toLocaleString()}</span></div>
+          <div class="fin-row"><span class="fin-label">Total NHIF</span><span class="fin-val red">KES ${(d.financial.totalNhif||0).toLocaleString()}</span></div>
+          <div class="fin-row"><span class="fin-label">Total NSSF</span><span class="fin-val red">KES ${(d.financial.totalNssf||0).toLocaleString()}</span></div>
+          <div class="fin-row"><span class="fin-label">Payslips Issued</span><span class="fin-val">${d.financial.payslipCount||0}</span></div>
+          <div class="fin-total">
+            <span>Total Net Paid Out</span>
+            <span>KES ${(d.financial.totalNet||0).toLocaleString()}</span>
+          </div>
+          <div style="margin-top:1rem;padding:.75rem;background:#f0fdf4;border-radius:6px;font-size:.78rem;color:var(--green-dark);border:1px solid #c8e6c9">
+            💡 This figure covers paid intern salaries only. Student attachees receive no financial compensation.
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ACTIVITY SUMMARY -->
+    <div class="card" style="margin-bottom:1.5rem">
+      <div class="card-head"><div class="card-title">📋 Activity Summary — ${d.year}</div></div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem">
+          <div style="text-align:center;padding:1rem;background:var(--cream);border-radius:8px">
+            <div style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:var(--navy)">${d.taskLogs.total}</div>
+            <div style="font-size:.75rem;color:var(--text-light);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-top:.25rem">Task Logs</div>
+            <div style="font-size:.75rem;color:var(--green);margin-top:.2rem">${d.taskLogs.reviewed} reviewed</div>
+          </div>
+          <div style="text-align:center;padding:1rem;background:var(--cream);border-radius:8px">
+            <div style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:var(--navy)">${d.evaluations}</div>
+            <div style="font-size:.75rem;color:var(--text-light);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-top:.25rem">Evaluations</div>
+            <div style="font-size:.75rem;color:var(--text-light);margin-top:.2rem">By supervisors</div>
+          </div>
+          <div style="text-align:center;padding:1rem;background:var(--cream);border-radius:8px">
+            <div style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:var(--navy)">${d.completed}</div>
+            <div style="font-size:.75rem;color:var(--text-light);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-top:.25rem">Completed</div>
+            <div style="font-size:.75rem;color:var(--text-light);margin-top:.2rem">${d.completionRate}% rate</div>
+          </div>
+          <div style="text-align:center;padding:1rem;background:var(--cream);border-radius:8px">
+            <div style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:var(--navy)">${d.supervisors}</div>
+            <div style="font-size:.75rem;color:var(--text-light);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-top:.25rem">Supervisors</div>
+            <div style="font-size:.75rem;color:var(--text-light);margin-top:.2rem">Active this year</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORT FOOTER -->
+    <div style="background:var(--navy);color:#fff;border-radius:10px;padding:1.25rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+      <div>
+        <div style="font-family:'Playfair Display',serif;font-size:.95rem;font-weight:700">Parliament of Kenya — Intern & Attachment Management System</div>
+        <div style="font-size:.75rem;color:rgba(255,255,255,.5);margin-top:.25rem">Annual Report ${d.year} · Generated ${new Date().toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'})} · Confidential</div>
+      </div>
+      <div style="font-size:.78rem;color:rgba(255,255,255,.5)">Parliamentary Service Commission</div>
+    </div>
+
+  `;
+
+  // Render all charts after DOM is ready
+  setTimeout(() => {
+    renderMonthlyChart(d.monthlyIntake);
+    renderTypeChart(d.totalStudents, d.totalInterns);
+    renderDeptChart(d.deptBreakdown);
+    renderGenderChart(d.gender);
+  }, 100);
+}
+
+function renderMonthlyChart(data) {
+  const ctx = document.getElementById('monthlyChart');
+  if(!ctx) return;
+  charts.monthly = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: MONTHS,
+      datasets: [
+        { label: 'Students', data: data.map(m=>m.students), backgroundColor: '#1a3a6b', borderRadius: 4 },
+        { label: 'Interns',  data: data.map(m=>m.interns),  backgroundColor: '#C9A84C', borderRadius: 4 },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+      scales: {
+        x: { stacked: true, grid: { display: false } },
+        y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#f0f0f0' } },
+      },
+    },
+  });
+}
+
+function renderTypeChart(students, interns) {
+  const ctx = document.getElementById('typeChart');
+  if(!ctx) return;
+  charts.type = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Students', 'Interns'],
+      datasets: [{ data: [students, interns], backgroundColor: ['#1a3a6b','#C9A84C'], borderWidth: 0, hoverOffset: 6 }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '70%',
+      plugins: { legend: { display: false } },
+    },
+  });
+}
+
+function renderDeptChart(data) {
+  const ctx = document.getElementById('deptChart');
+  if(!ctx) return;
+  charts.dept = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: data.map(d => d.dept.replace(' Department','').replace(' & ',' &\n')),
+      datasets: [
+        { label: 'Students', data: data.map(d=>d.students), backgroundColor: '#1a3a6b', borderRadius: 4 },
+        { label: 'Interns',  data: data.map(d=>d.interns),  backgroundColor: '#C9A84C', borderRadius: 4 },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+      scales: {
+        x: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#f0f0f0' } },
+        y: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 } } },
+      },
+    },
+  });
+}
+
+function renderGenderChart(g) {
+  const ctx = document.getElementById('genderChart');
+  if(!ctx) return;
+  charts.gender = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Male','Female','Not specified'],
+      datasets: [{ data: [g.male, g.female, g.other], backgroundColor: ['#1a3a6b','#c62828','#9aa3b0'], borderWidth: 0, hoverOffset: 6 }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '65%',
+      plugins: { legend: { display: false } },
+    },
+  });
+}
+
+function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+</script>
+</body>
+</html>
