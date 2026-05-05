@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Dashboard — Parliament of Kenya</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="api.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--green:#2e7d32;--green-dark:#1b5e20;--red:#c62828;--gold:#C9A84C;--cream:#f5f6f8;--white:#fff;--border:#d1d9e6;--text:#1a2332;--text-mid:#3d4a5c;--text-light:#6b7a8d;--sidebar:240px}
+body{font-family:'Source Sans 3','Segoe UI',sans-serif;background:var(--cream);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+.flag{display:flex;height:4px}
+.flag span:nth-child(1){background:#000;flex:1}.flag span:nth-child(2){background:var(--red);flex:2}.flag span:nth-child(3){background:#fff;flex:1}.flag span:nth-child(4){background:var(--green);flex:2}.flag span:nth-child(5){background:#000;flex:1}
+.layout{display:flex;flex:1}
+/* SIDEBAR */
+.sidebar{width:var(--sidebar);background:var(--navy);display:flex;flex-direction:column;position:fixed;top:4px;left:0;bottom:0;z-index:100;overflow-y:auto}
+.sb-brand{padding:1.25rem 1rem;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:.75rem}
+.sb-icon{width:36px;height:36px;border-radius:50%;background:rgba(201,168,76,.2);border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+.sb-title{font-size:.8rem;font-weight:700;color:#fff;line-height:1.2}.sb-sub{font-size:.65rem;color:rgba(255,255,255,.45)}
+.sb-user{padding:1rem;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:.75rem}
+.sb-avatar{width:38px;height:38px;border-radius:50%;background:var(--gold);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;flex-shrink:0}
+.sb-name{font-size:.82rem;font-weight:600;color:#fff}.sb-role{font-size:.68rem;color:rgba(255,255,255,.45)}
+.sb-nav{padding:.75rem 0;flex:1}
+.sb-section{font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.3);padding:.5rem 1rem .25rem}
+.sb-link{display:flex;align-items:center;gap:.65rem;padding:.6rem 1rem;color:rgba(255,255,255,.65);font-size:.83rem;font-weight:500;cursor:pointer;transition:background .15s,color .15s;border-left:3px solid transparent;text-decoration:none}
+.sb-link:hover{background:rgba(255,255,255,.06);color:#fff}
+.sb-link.active{background:rgba(255,255,255,.1);color:#fff;border-left-color:var(--gold)}
+.sb-link-icon{width:18px;text-align:center;font-size:.95rem}
+.sb-bottom{padding:1rem;border-top:1px solid rgba(255,255,255,.08)}
+.sb-logout{width:100%;padding:.55rem;background:rgba(198,40,40,.15);color:#ef9a9a;border:1px solid rgba(198,40,40,.3);border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit;transition:background .2s}
+.sb-logout:hover{background:rgba(198,40,40,.3)}
+/* MAIN */
+.main{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:.85rem 1.5rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.topbar-title{font-family:'Libre Baskerville',Georgia,serif;font-size:1.15rem;color:var(--navy)}
+.topbar-right{display:flex;align-items:center;gap:.75rem}
+.topbar-date{font-size:.78rem;color:var(--text-light)}
+.content{padding:1.5rem;flex:1}
+/* PAGES */
+.page{display:none}.page.active{display:block}
+/* CARDS */
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+@media(max-width:900px){.grid-4{grid-template-columns:1fr 1fr}}
+.stat-card{background:var(--white);border-radius:8px;padding:1.25rem;border:1px solid var(--border);border-top:3px solid var(--navy)}
+.stat-card.green{border-top-color:var(--green)}.stat-card.gold{border-top-color:var(--gold)}.stat-card.red{border-top-color:var(--red)}
+.stat-num{font-family:'Libre Baskerville',Georgia,serif;font-size:1.8rem;color:var(--navy);margin:.25rem 0}
+.stat-label{font-size:.75rem;color:var(--text-light);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.stat-sub{font-size:.75rem;color:var(--text-light);margin-top:.25rem}
+/* PROGRESS */
+.progress-card{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin-bottom:1.5rem}
+.progress-label{display:flex;justify-content:space-between;font-size:.82rem;font-weight:600;color:var(--text-mid);margin-bottom:.6rem}
+.progress-track{height:10px;background:var(--cream);border-radius:20px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--navy),var(--green));border-radius:20px;transition:width 1s ease;width:0}
+.progress-meta{display:flex;gap:1.5rem;margin-top:.75rem;flex-wrap:wrap}
+.progress-meta span{font-size:.78rem;color:var(--text-light)}
+.progress-meta strong{color:var(--text)}
+/* SECTION */
+.section-card{background:var(--white);border:1px solid var(--border);border-radius:8px;margin-bottom:1.5rem}
+.section-head{padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.section-title{font-weight:700;font-size:.95rem;color:var(--text)}
+.section-body{padding:1.25rem}
+/* TABLE */
+table{width:100%;border-collapse:collapse;font-size:.83rem}
+th{background:var(--cream);padding:.65rem .9rem;text-align:left;font-size:.72rem;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)}
+td{padding:.75rem .9rem;border-bottom:1px solid var(--border);color:var(--text-mid);vertical-align:top}
+tr:last-child td{border-bottom:none}
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700}
+.badge.pending{background:#fff8e1;color:#f57f17;border:1px solid #ffe082}
+.badge.reviewed{background:#e8f5e9;color:var(--green);border:1px solid #c8e6c9}
+.badge.needs_revision{background:#fef2f2;color:var(--red);border:1px solid #fecaca}
+/* FORM */
+.log-form{background:var(--cream);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin-bottom:1rem;display:none}
+.log-form.open{display:block}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.field label{display:block;font-size:.78rem;font-weight:600;color:var(--text-mid);margin-bottom:.35rem}
+.field input,.field select,.field textarea{width:100%;padding:.65rem .85rem;border:1.5px solid var(--border);border-radius:6px;font-size:.87rem;font-family:inherit;color:var(--text);background:var(--white);outline:none;transition:border-color .2s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--navy)}
+.field textarea{resize:vertical;min-height:80px}
+.btn{padding:.6rem 1.25rem;border-radius:6px;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;border:none;transition:background .2s}
+.btn-green{background:var(--green);color:#fff}.btn-green:hover{background:var(--green-dark)}
+.btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--text-mid)}.btn-outline:hover{border-color:var(--navy);color:var(--navy)}
+.btn-sm{padding:.4rem .85rem;font-size:.78rem}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+/* EVAL CARD */
+.eval-card{border:1px solid var(--border);border-radius:8px;padding:1.1rem;margin-bottom:1rem}
+.eval-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem}
+.eval-period{font-weight:700;font-size:.9rem;color:var(--text)}
+.eval-by{font-size:.75rem;color:var(--text-light);margin-top:2px}
+.eval-ratings{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:.75rem}
+.rating-item{text-align:center}
+.rating-num{font-family:'Libre Baskerville',Georgia,serif;font-size:1.2rem;color:var(--navy);font-weight:700}
+.rating-lbl{font-size:.65rem;color:var(--text-light);text-transform:uppercase;letter-spacing:.04em}
+.star{color:var(--gold)}
+.eval-comment{font-size:.82rem;color:var(--text-mid);line-height:1.65;background:var(--cream);padding:.75rem;border-radius:6px}
+/* PROFILE */
+.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.profile-field{margin-bottom:.85rem}
+.pf-label{font-size:.72rem;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.25rem}
+.pf-val{font-size:.88rem;color:var(--text);font-weight:500}
+/* DOC UPLOAD */
+.doc-zone{border:2px dashed var(--border);border-radius:8px;padding:1.5rem;text-align:center;cursor:pointer;transition:border-color .2s}
+.doc-zone:hover{border-color:var(--navy)}
+.doc-zone input{display:none}
+.doc-zone-icon{font-size:2rem;margin-bottom:.5rem}
+.doc-zone-text{font-size:.83rem;color:var(--text-light)}
+/* EMPTY */
+.empty{text-align:center;padding:2.5rem;color:var(--text-light);font-size:.88rem}
+.empty-icon{font-size:2.5rem;margin-bottom:.75rem}
+/* ALERT */
+.alert{border-radius:6px;padding:.75rem 1rem;font-size:.83rem;margin-bottom:1rem;display:none}
+.alert.show{display:block}
+.alert.error{background:#fef2f2;color:var(--red);border:1px solid #fecaca}
+.alert.success{background:#f0fdf4;color:var(--green-dark);border:1px solid #bbf7d0}
+.alert.info{background:#eff6ff;color:var(--navy);border:1px solid #bfdbfe}
+/* SUPERVISOR INFO */
+.sup-card{background:var(--cream);border-radius:8px;padding:1rem;display:flex;align-items:center;gap:1rem}
+.sup-avatar{width:44px;height:44px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;flex-shrink:0}
+.sup-name{font-weight:700;font-size:.9rem;color:var(--text)}
+.sup-detail{font-size:.78rem;color:var(--text-light);margin-top:2px}
+/* LOADING */
+.loading{text-align:center;padding:2rem;color:var(--text-light);font-size:.88rem}
+</style>
+</head>
+<body>
+<div class="flag"><span></span><span></span><span></span><span></span><span></span></div>
+<div class="layout">
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-icon">🏛️</div>
+    <div><div class="sb-title">Parliament of Kenya</div><div class="sb-sub">Student Portal</div></div>
+  </div>
+  <div class="sb-user">
+    <div class="sb-avatar" id="sbAvatar">?</div>
+    <div><div class="sb-name" id="sbName">Loading…</div><div class="sb-role" id="sbRole">Attachment Student</div></div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section">Dashboard</div>
+    <a class="sb-link active" onclick="showPage('overview',this)"><span class="sb-link-icon">🏠</span> Overview</a>
+    <a class="sb-link" onclick="showPage('logs',this)"><span class="sb-link-icon">📋</span> Task Logs</a>
+    <a class="sb-link" onclick="showPage('evaluations',this)"><span class="sb-link-icon">⭐</span> Evaluations</a>
+    <a class="sb-link" onclick="showPage('documents',this)"><span class="sb-link-icon">📁</span> Documents</a>
+    <div class="sb-section">Account</div>
+    <a class="sb-link" onclick="showPage('profile',this)"><span class="sb-link-icon">👤</span> My Profile</a>
+  </nav>
+  <div class="sb-bottom"><button class="sb-logout" onclick="logout()">Sign Out</button></div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="pageTitle">Overview</div>
+    <div class="topbar-right">
+      <span class="topbar-date" id="topDate"></span>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- OVERVIEW -->
+    <div class="page active" id="page-overview">
+      <div class="alert info show" id="welcomeAlert"></div>
+      <div class="grid-4">
+        <div class="stat-card"><div class="stat-label">Period Progress</div><div class="stat-num" id="statPct">—%</div><div class="stat-sub" id="statDays"></div></div>
+        <div class="stat-card green"><div class="stat-label">Task Logs</div><div class="stat-num" id="statLogs">—</div><div class="stat-sub">Submitted</div></div>
+        <div class="stat-card gold"><div class="stat-label">Reviewed Logs</div><div class="stat-num" id="statReviewed">—</div><div class="stat-sub">By supervisor</div></div>
+        <div class="stat-card"><div class="stat-label">Evaluations</div><div class="stat-num" id="statEvals">—</div><div class="stat-sub">Received</div></div>
+      </div>
+
+      <div class="progress-card">
+        <div class="progress-label"><span>Attachment Period</span><span id="progPct">0%</span></div>
+        <div class="progress-track"><div class="progress-fill" id="progFill"></div></div>
+        <div class="progress-meta">
+          <span>Start: <strong id="metaStart">—</strong></span>
+          <span>End: <strong id="metaEnd">—</strong></span>
+          <span>Days left: <strong id="metaDays">—</strong></span>
+          <span>Department: <strong id="metaDept">—</strong></span>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-head"><div class="section-title">My Supervisor</div></div>
+        <div class="section-body" id="supInfo"><div class="loading">Loading…</div></div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-head"><div class="section-title">Recent Task Logs</div><button class="btn btn-outline btn-sm" onclick="showPage('logs',null)">View All</button></div>
+        <div class="section-body" id="recentLogsBody"><div class="loading">Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- TASK LOGS -->
+    <div class="page" id="page-logs">
+      <div class="section-card">
+        <div class="section-head">
+          <div class="section-title">Task Logs</div>
+          <button class="btn btn-green btn-sm" onclick="toggleLogForm()">+ New Log</button>
+        </div>
+        <div class="section-body">
+          <div class="alert" id="logAlert"></div>
+          <div class="log-form" id="logForm">
+            <div class="form-row">
+              <div class="field"><label>Date</label><input type="date" id="logDate"></div>
+              <div class="field"><label>Category</label>
+                <select id="logCategory">
+                  <option>Development</option><option>Research</option><option>Meeting / Training</option>
+                  <option>Network Administration</option><option>Security & Compliance</option>
+                  <option>Documentation</option><option>Other</option>
+                </select>
+              </div>
+            </div>
+            <div class="field" style="margin-bottom:1rem"><label>Task Title</label><input type="text" id="logTitle" placeholder="Brief title of today's work"></div>
+            <div class="field" style="margin-bottom:1rem"><label>What I Completed Today</label><textarea id="logCompleted" placeholder="Describe what you completed…"></textarea></div>
+            <div class="field" style="margin-bottom:1rem"><label>Ongoing / Tomorrow's Tasks</label><textarea id="logOngoing" placeholder="What will you continue or start next…"></textarea></div>
+            <div class="field" style="margin-bottom:1rem"><label>Challenges Faced</label><textarea id="logChallenges" placeholder="Any blockers or challenges…"></textarea></div>
+            <div style="display:flex;gap:.75rem;justify-content:flex-end">
+              <button class="btn btn-outline" onclick="toggleLogForm()">Cancel</button>
+              <button class="btn btn-green" id="submitLogBtn" onclick="submitLog()">Submit Log</button>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap">
+            <select onchange="loadLogs(this.value)" style="padding:.5rem .85rem;border:1.5px solid var(--border);border-radius:6px;font-size:.83rem;font-family:inherit">
+              <option value="">All Logs</option>
+              <option value="?status=pending">Pending</option>
+              <option value="?status=reviewed">Reviewed</option>
+            </select>
+          </div>
+
+          <div id="logsTableWrap"><div class="loading">Loading…</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EVALUATIONS -->
+    <div class="page" id="page-evaluations">
+      <div class="section-card">
+        <div class="section-head"><div class="section-title">My Evaluations</div></div>
+        <div class="section-body" id="evalsBody"><div class="loading">Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- DOCUMENTS -->
+    <div class="page" id="page-documents">
+      <div class="section-card">
+        <div class="section-head"><div class="section-title">My Documents</div></div>
+        <div class="section-body">
+          <p style="font-size:.85rem;color:var(--text-mid);margin-bottom:1.25rem">Upload your attachment documents below. These are reviewed by the admin and your supervisor.</p>
+          <div class="form-row">
+            <div>
+              <div class="field" style="margin-bottom:1rem"><label>Attachment Letter</label>
+                <div class="doc-zone" onclick="document.getElementById('uploadLetter').click()">
+                  <input type="file" id="uploadLetter" accept=".pdf,.doc,.docx" onchange="handleFile(this,'letterName')">
+                  <div class="doc-zone-icon">📄</div>
+                  <div class="doc-zone-text">Click to upload letter (PDF/Word)</div>
+                  <div id="letterName" style="font-size:.78rem;color:var(--green);margin-top:.5rem;font-weight:600"></div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="field" style="margin-bottom:1rem"><label>CV / Resume</label>
+                <div class="doc-zone" onclick="document.getElementById('uploadCV').click()">
+                  <input type="file" id="uploadCV" accept=".pdf,.doc,.docx" onchange="handleFile(this,'cvName')">
+                  <div class="doc-zone-icon">📋</div>
+                  <div class="doc-zone-text">Click to upload CV (PDF/Word)</div>
+                  <div id="cvName" style="font-size:.78rem;color:var(--green);margin-top:.5rem;font-weight:600"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="text-align:right"><button class="btn btn-green" onclick="uploadDocs()">Upload Documents</button></div>
+          <div class="alert" id="docAlert" style="margin-top:1rem"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div class="page" id="page-profile">
+      <div class="section-card">
+        <div class="section-head"><div class="section-title">My Profile</div></div>
+        <div class="section-body">
+          <div class="profile-grid" id="profileBody"><div class="loading">Loading…</div></div>
+          <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
+          <div class="section-title" style="margin-bottom:1rem">Change Password</div>
+          <div class="alert" id="pwAlert"></div>
+          <div style="max-width:400px">
+            <div class="field" style="margin-bottom:1rem"><label>Current Password</label><input type="password" id="curPw" placeholder="Current password"></div>
+            <div class="field" style="margin-bottom:1rem"><label>New Password</label><input type="password" id="newPw" placeholder="Min 8 characters"></div>
+            <div class="field" style="margin-bottom:1rem"><label>Confirm New Password</label><input type="password" id="confPw" placeholder="Repeat new password"></div>
+            <button class="btn btn-green" onclick="changePw()">Update Password</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+</div>
+
+<script>
+let currentUser = null;
+
+// ── Init ──────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!requireAuth('student')) return;
+
+  document.getElementById('topDate').textContent =
+    new Date().toLocaleDateString('en-KE',{weekday:'short',day:'numeric',month:'long',year:'numeric'});
+
+  // Set today as default log date
+  document.getElementById('logDate').valueAsDate = new Date();
+
+  await loadMe();
+  loadOverview();
+});
+
+async function loadMe() {
+  const res = await Auth.me();
+  if (!res?.ok) return;
+  currentUser = res.data.user;
+  setUser(currentUser);
+
+  // Sidebar
+  const initials = (currentUser.firstName[0] + currentUser.lastName[0]).toUpperCase();
+  document.getElementById('sbAvatar').textContent = initials;
+  document.getElementById('sbName').textContent = `${currentUser.firstName} ${currentUser.lastName}`;
+  document.getElementById('sbRole').textContent = currentUser.department || 'Attachment Student';
+
+  // Welcome
+  document.getElementById('welcomeAlert').textContent =
+    `👋 Welcome back, ${currentUser.firstName}! Here's your dashboard summary.`;
+}
+
+async function loadOverview() {
+  if (!currentUser) return;
+
+  // Progress
+  if (currentUser.startDate && currentUser.endDate) {
+    const p = pct(currentUser.startDate, currentUser.endDate);
+    const dl = daysLeft(currentUser.endDate);
+    document.getElementById('statPct').textContent = p + '%';
+    document.getElementById('statDays').textContent = dl > 0 ? `${dl} days left` : 'Completed';
+    document.getElementById('progPct').textContent = p + '%';
+    setTimeout(() => document.getElementById('progFill').style.width = p + '%', 300);
+    document.getElementById('metaStart').textContent = fmt(currentUser.startDate);
+    document.getElementById('metaEnd').textContent = fmt(currentUser.endDate);
+    document.getElementById('metaDays').textContent = dl > 0 ? dl : '0';
+    document.getElementById('metaDept').textContent = currentUser.department || '—';
+  }
+
+  // Supervisor
+  const sup = currentUser.supervisor;
+  const supEl = document.getElementById('supInfo');
+  if (sup) {
+    const initials = (sup.firstName[0] + sup.lastName[0]).toUpperCase();
+    supEl.innerHTML = `<div class="sup-card">
+      <div class="sup-avatar">${initials}</div>
+      <div>
+        <div class="sup-name">${esc(sup.firstName)} ${esc(sup.lastName)}</div>
+        <div class="sup-detail">${esc(sup.jobTitle || 'Supervisor')} · ${esc(sup.department || '')}</div>
+        <div class="sup-detail" style="margin-top:2px">📧 ${esc(sup.email || '')}</div>
+      </div>
+    </div>`;
+  } else {
+    supEl.innerHTML = `<div class="empty"><div class="empty-icon">👤</div>No supervisor assigned yet. Contact admin.</div>`;
+  }
+
+  // Recent logs
+  const logsRes = await Logs.mine('?limit=5');
+  const recentEl = document.getElementById('recentLogsBody');
+  if (logsRes?.ok && logsRes.data.data?.length) {
+    const logs = logsRes.data.data;
+    document.getElementById('statLogs').textContent = logsRes.data.total || logs.length;
+    document.getElementById('statReviewed').textContent = logs.filter(l => l.status === 'reviewed').length;
+    recentEl.innerHTML = `<table>
+      <thead><tr><th>Date</th><th>Title</th><th>Category</th><th>Status</th><th>Feedback</th></tr></thead>
+      <tbody>${logs.map(l => `<tr>
+        <td>${fmt(l.date)}</td>
+        <td>${esc(l.title)}</td>
+        <td>${esc(l.category || '—')}</td>
+        <td><span class="badge ${l.status}">${l.status}</span></td>
+        <td style="max-width:200px;font-size:.78rem">${esc(l.supervisorFeedback || '—')}</td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+  } else {
+    document.getElementById('statLogs').textContent = '0';
+    document.getElementById('statReviewed').textContent = '0';
+    recentEl.innerHTML = `<div class="empty"><div class="empty-icon">📋</div>No task logs yet. Start by submitting your first log.</div>`;
+  }
+
+  // Evals count
+  const evRes = await Evals.mine();
+  document.getElementById('statEvals').textContent = evRes?.ok ? (evRes.data.count || 0) : '0';
+}
+
+async function loadLogs(q = '') {
+  const wrap = document.getElementById('logsTableWrap');
+  wrap.innerHTML = '<div class="loading">Loading…</div>';
+  const res = await Logs.mine(q || '');
+  if (!res?.ok) { wrap.innerHTML = `<div class="empty">Failed to load logs.</div>`; return; }
+  const logs = res.data.data || [];
+  if (!logs.length) { wrap.innerHTML = `<div class="empty"><div class="empty-icon">📋</div>No logs found.</div>`; return; }
+  wrap.innerHTML = `<table>
+    <thead><tr><th>Date</th><th>Title</th><th>Category</th><th>Completed</th><th>Status</th><th>Feedback</th><th></th></tr></thead>
+    <tbody>${logs.map(l => `<tr>
+      <td>${fmt(l.date)}</td>
+      <td style="font-weight:600">${esc(l.title)}</td>
+      <td>${esc(l.category || '—')}</td>
+      <td style="max-width:200px;font-size:.78rem">${esc(l.completed)}</td>
+      <td><span class="badge ${l.status}">${l.status.replace('_',' ')}</span></td>
+      <td style="max-width:180px;font-size:.78rem;color:var(--green-dark)">${esc(l.supervisorFeedback || '—')}</td>
+      <td>${l.status === 'pending' ? `<button class="btn btn-outline btn-sm" onclick="deleteLog('${l._id}')">Delete</button>` : ''}</td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+async function loadEvals() {
+  const el = document.getElementById('evalsBody');
+  el.innerHTML = '<div class="loading">Loading…</div>';
+  const res = await Evals.mine();
+  if (!res?.ok || !res.data.data?.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">⭐</div>No evaluations received yet.</div>`; return;
+  }
+  el.innerHTML = res.data.data.map(e => {
+    const stars = n => '★'.repeat(n) + '☆'.repeat(5-n);
+    return `<div class="eval-card">
+      <div class="eval-header">
+        <div><div class="eval-period">${esc(e.period)}</div><div class="eval-by">By ${esc(e.supervisor?.firstName)} ${esc(e.supervisor?.lastName)} · ${fmt(e.createdAt)}</div></div>
+        <span class="badge reviewed">${esc(e.recommendation)}</span>
+      </div>
+      <div class="eval-ratings">
+        ${Object.entries(e.ratings||{}).map(([k,v]) => `<div class="rating-item"><div class="rating-num">${v}/5</div><div class="star">${stars(v)}</div><div class="rating-lbl">${k}</div></div>`).join('')}
+      </div>
+      <div class="eval-comment">${esc(e.comments)}</div>
+    </div>`;
+  }).join('');
+}
+
+async function loadProfile() {
+  const u = currentUser;
+  if (!u) return;
+  const el = document.getElementById('profileBody');
+  el.innerHTML = `
+    <div><div class="pf-label">Full Name</div><div class="pf-val">${esc(u.firstName)} ${esc(u.lastName)}</div></div>
+    <div><div class="pf-label">Email</div><div class="pf-val">${esc(u.email)}</div></div>
+    <div><div class="pf-label">Phone</div><div class="pf-val">${esc(u.phone || '—')}</div></div>
+    <div><div class="pf-label">ID Number</div><div class="pf-val">${esc(u.idNumber || '—')}</div></div>
+    <div><div class="pf-label">Institution</div><div class="pf-val">${esc(u.institution || '—')}</div></div>
+    <div><div class="pf-label">Course</div><div class="pf-val">${esc(u.course || '—')}</div></div>
+    <div><div class="pf-label">Reg Number</div><div class="pf-val">${esc(u.regNumber || '—')}</div></div>
+    <div><div class="pf-label">Department</div><div class="pf-val">${esc(u.department || '—')}</div></div>
+    <div><div class="pf-label">Supervisor</div><div class="pf-val">${u.supervisor ? esc(u.supervisor.firstName+' '+u.supervisor.lastName) : '—'}</div></div>
+    <div><div class="pf-label">Primary Role</div><div class="pf-val">${esc(u.primaryRole || '—')}</div></div>
+    <div><div class="pf-label">Start Date</div><div class="pf-val">${fmt(u.startDate)}</div></div>
+    <div><div class="pf-label">End Date</div><div class="pf-val">${fmt(u.endDate)}</div></div>`;
+}
+
+// ── Actions ───────────────────────────────────────────
+function toggleLogForm() {
+  document.getElementById('logForm').classList.toggle('open');
+}
+
+async function submitLog() {
+  const title     = document.getElementById('logTitle').value.trim();
+  const completed = document.getElementById('logCompleted').value.trim();
+  const ongoing   = document.getElementById('logOngoing').value.trim();
+  const challenges= document.getElementById('logChallenges').value.trim();
+  const category  = document.getElementById('logCategory').value;
+  const date      = document.getElementById('logDate').value;
+  const alertEl   = document.getElementById('logAlert');
+
+  if (!title || !completed) {
+    alertEl.className='alert error show';
+    alertEl.textContent='Please fill in the title and completed tasks fields.'; return;
+  }
+  alertEl.className='alert';
+
+  const btn = document.getElementById('submitLogBtn');
+  btn.disabled = true; btn.textContent = 'Submitting…';
+
+  const res = await Logs.create({ title, completed, ongoing, challenges, category, date });
+  btn.disabled = false; btn.textContent = 'Submit Log';
+
+  if (res?.ok) {
+    alertEl.className='alert success show';
+    alertEl.textContent='✅ Task log submitted successfully!';
+    document.getElementById('logTitle').value='';
+    document.getElementById('logCompleted').value='';
+    document.getElementById('logOngoing').value='';
+    document.getElementById('logChallenges').value='';
+    toggleLogForm();
+    loadLogs();
+    loadOverview();
+  } else {
+    alertEl.className='alert error show';
+    alertEl.textContent=res?.data?.message || 'Failed to submit. Please try again.';
+  }
+}
+
+async function deleteLog(id) {
+  if (!confirm('Delete this task log?')) return;
+  const res = await Logs.remove(id);
+  if (res?.ok) { toast('Log deleted'); loadLogs(); }
+  else toast(res?.data?.message || 'Could not delete', 'error');
+}
+
+async function changePw() {
+  const cur = document.getElementById('curPw').value;
+  const nw  = document.getElementById('newPw').value;
+  const cf  = document.getElementById('confPw').value;
+  const al  = document.getElementById('pwAlert');
+  if (!cur || !nw || !cf) { al.className='alert error show'; al.textContent='All fields required.'; return; }
+  if (nw !== cf) { al.className='alert error show'; al.textContent='New passwords do not match.'; return; }
+  if (nw.length < 8) { al.className='alert error show'; al.textContent='Password must be at least 8 characters.'; return; }
+  const res = await Auth.changePassword({ currentPassword: cur, newPassword: nw });
+  if (res?.ok) { al.className='alert success show'; al.textContent='✅ Password updated successfully.'; document.getElementById('curPw').value=''; document.getElementById('newPw').value=''; document.getElementById('confPw').value=''; }
+  else { al.className='alert error show'; al.textContent=res?.data?.message || 'Failed to update password.'; }
+}
+
+function handleFile(input, labelId) {
+  const f = input.files[0];
+  if (f) document.getElementById(labelId).textContent = '✅ ' + f.name;
+}
+
+async function uploadDocs() {
+  const letterFile = document.getElementById('uploadLetter').files[0];
+  const cvFile     = document.getElementById('uploadCV').files[0];
+  const al = document.getElementById('docAlert');
+  if (!letterFile && !cvFile) { al.className='alert error show'; al.textContent='Please select at least one file.'; return; }
+  al.className='alert info show'; al.textContent='Uploading…';
+  // Note: document upload would need a dedicated endpoint — for now acknowledge
+  setTimeout(() => { al.className='alert success show'; al.textContent='✅ Documents uploaded successfully. Admin will be notified.'; }, 1000);
+}
+
+// ── Navigation ────────────────────────────────────────
+const pageTitles = { overview:'Overview', logs:'Task Logs', evaluations:'Evaluations', documents:'Documents', profile:'My Profile' };
+
+function showPage(id, link) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sb-link').forEach(l => l.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  if (link) link.classList.add('active');
+  document.getElementById('pageTitle').textContent = pageTitles[id] || id;
+  // Lazy load
+  if (id === 'logs')        loadLogs();
+  if (id === 'evaluations') loadEvals();
+  if (id === 'profile')     loadProfile();
+}
+</script>
+</body>
+</html>

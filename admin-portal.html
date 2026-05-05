@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Portal — Parliament of Kenya</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="api.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a3a6b;--green:#2e7d32;--green-dark:#1b5e20;--red:#c62828;--gold:#C9A84C;--cream:#f5f6f8;--white:#fff;--border:#d1d9e6;--text:#1a2332;--text-mid:#3d4a5c;--text-light:#6b7a8d;--sidebar:250px}
+body{font-family:'Source Sans 3','Segoe UI',sans-serif;background:var(--cream);min-height:100vh;display:flex;flex-direction:column}
+.flag{display:flex;height:4px}.flag span:nth-child(1){background:#000;flex:1}.flag span:nth-child(2){background:var(--red);flex:2}.flag span:nth-child(3){background:#fff;flex:1}.flag span:nth-child(4){background:var(--green);flex:2}.flag span:nth-child(5){background:#000;flex:1}
+.layout{display:flex;flex:1}
+.sidebar{width:var(--sidebar);background:var(--navy);display:flex;flex-direction:column;position:fixed;top:4px;left:0;bottom:0;z-index:100;overflow-y:auto}
+.sb-brand{padding:1.25rem 1rem;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:.75rem}
+.sb-logo{width:36px;height:36px;border-radius:50%;background:rgba(201,168,76,.2);border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+.sb-brand-name{font-size:.8rem;font-weight:700;color:#fff}.sb-brand-sub{font-size:.65rem;color:rgba(255,255,255,.4)}
+.sb-user{padding:1rem;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:.75rem}
+.sb-av{width:38px;height:38px;border-radius:50%;background:var(--gold);color:#1a2332;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;flex-shrink:0}
+.sb-un{font-size:.82rem;font-weight:600;color:#fff}.sb-ur{font-size:.68rem;color:rgba(255,255,255,.4)}
+.sb-nav{padding:.5rem 0;flex:1}
+.sb-sec{font-size:.63rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.28);padding:.6rem 1rem .2rem}
+.sb-a{display:flex;align-items:center;gap:.65rem;padding:.62rem 1rem;color:rgba(255,255,255,.62);font-size:.83rem;font-weight:500;cursor:pointer;border-left:3px solid transparent;transition:all .15s;text-decoration:none}
+.sb-a:hover{background:rgba(255,255,255,.06);color:#fff}
+.sb-a.active{background:rgba(255,255,255,.1);color:#fff;border-left-color:var(--gold)}
+.sb-ai{width:18px;text-align:center;font-size:.95rem}
+.bc{background:var(--red);color:#fff;font-size:.65rem;font-weight:700;padding:1px 6px;border-radius:20px;margin-left:auto}
+.sb-bot{padding:1rem;border-top:1px solid rgba(255,255,255,.08)}
+.sb-lo{width:100%;padding:.55rem;background:rgba(198,40,40,.15);color:#ef9a9a;border:1px solid rgba(198,40,40,.3);border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit;transition:background .2s}
+.sb-lo:hover{background:rgba(198,40,40,.3)}
+.main{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column}
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:.85rem 1.5rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.tb-title{font-family:'Libre Baskerville',Georgia,serif;font-size:1.15rem;color:var(--navy)}
+.tb-date{font-size:.78rem;color:var(--text-light)}
+.content{padding:1.5rem;flex:1}
+.page{display:none}.page.active{display:block}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+@media(max-width:1000px){.g4{grid-template-columns:1fr 1fr}}
+.sc{background:var(--white);border-radius:8px;padding:1.25rem;border:1px solid var(--border);border-top:3px solid var(--navy)}
+.sc.g{border-top-color:var(--green)}.sc.go{border-top-color:var(--gold)}.sc.r{border-top-color:var(--red)}
+.sn{font-family:'Libre Baskerville',Georgia,serif;font-size:2rem;color:var(--navy);margin:.2rem 0}
+.sl{font-size:.72rem;color:var(--text-light);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.ss{font-size:.75rem;color:var(--text-light);margin-top:.2rem}
+.card{background:var(--white);border:1px solid var(--border);border-radius:8px;margin-bottom:1.5rem}
+.ch{padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
+.ct{font-weight:700;font-size:.95rem;color:var(--text)}
+.cb{padding:1.25rem}
+table{width:100%;border-collapse:collapse;font-size:.83rem}
+th{background:var(--cream);padding:.6rem .9rem;text-align:left;font-size:.72rem;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)}
+td{padding:.72rem .9rem;border-bottom:1px solid var(--border);color:var(--text-mid);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafbfc}
+.btn{padding:.5rem 1rem;border-radius:6px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit;border:none;transition:background .2s}
+.bg{background:var(--green);color:#fff}.bg:hover{background:var(--green-dark)}
+.br{background:var(--red);color:#fff}.br:hover{background:#b71c1c}
+.bn{background:var(--navy);color:#fff}.bn:hover{background:#132d54}
+.bgo{background:var(--gold);color:#1a2332}.bgo:hover{background:#b8912a}
+.bo{background:transparent;border:1.5px solid var(--border);color:var(--text-mid)}.bo:hover{border-color:var(--navy);color:var(--navy)}
+.sm{padding:.35rem .75rem;font-size:.75rem}
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700}
+.badge.student{background:#f3e5f5;color:#6a1b9a;border:1px solid #e1bee7}
+.badge.intern{background:#fff3e0;color:#e65100;border:1px solid #ffe0b2}
+.badge.yes{background:#e8f5e9;color:var(--green);border:1px solid #c8e6c9}
+.badge.no{background:#fff8e1;color:#f57f17;border:1px solid #ffe082}
+.badge.paid{background:#e8f5e9;color:var(--green);border:1px solid #c8e6c9}
+.badge.upcoming{background:#fff8e1;color:#f57f17;border:1px solid #ffe082}
+.fr{display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1rem}
+.fr select,.fr input{padding:.5rem .85rem;border:1.5px solid var(--border);border-radius:6px;font-size:.83rem;font-family:inherit;outline:none}
+.fr select:focus,.fr input:focus{border-color:var(--navy)}
+.tc{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+.db-row{display:flex;align-items:center;gap:.75rem;margin-bottom:.6rem}
+.db-lbl{width:110px;font-size:.78rem;color:var(--text-mid);flex-shrink:0}
+.db-track{flex:1;height:8px;background:var(--cream);border-radius:20px;overflow:hidden}
+.db-fill{height:100%;background:var(--navy);border-radius:20px;transition:width 1.2s ease;width:0}
+.db-n{width:24px;text-align:right;font-size:.78rem;font-weight:700;color:var(--navy)}
+.act-item{display:flex;align-items:flex-start;gap:.75rem;padding:.6rem 0;border-bottom:1px solid var(--border)}
+.act-item:last-child{border-bottom:none}
+.act-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:.35rem}
+.act-dot.g{background:var(--green)}.act-dot.o{background:var(--gold)}.act-dot.r{background:var(--red)}
+.act-txt{font-size:.82rem;color:var(--text-mid)}.act-txt strong{color:var(--text)}
+.act-time{font-size:.72rem;color:var(--text-light);margin-top:2px}
+.av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.78rem;flex-shrink:0;color:#fff}
+.field{margin-bottom:1rem}
+.field label{display:block;font-size:.78rem;font-weight:600;color:var(--text-mid);margin-bottom:.35rem}
+.field input,.field select{width:100%;padding:.65rem .85rem;border:1.5px solid var(--border);border-radius:6px;font-size:.87rem;font-family:inherit;color:var(--text);background:var(--white);outline:none;transition:border-color .2s}
+.field input:focus,.field select:focus{border-color:var(--navy)}
+.mo{position:fixed;inset:0;background:rgba(26,42,51,.55);backdrop-filter:blur(3px);z-index:200;display:flex;align-items:center;justify-content:center;padding:1rem;opacity:0;pointer-events:none;transition:opacity .25s}
+.mo.open{opacity:1;pointer-events:all}
+.md{background:var(--white);border-radius:8px;width:100%;max-width:520px;box-shadow:0 20px 60px rgba(0,0,0,.2);overflow:hidden;max-height:90vh;display:flex;flex-direction:column}
+.mh{padding:1.1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.mh h3{font-size:.95rem;font-weight:700}
+.mx{background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--text-light)}.mx:hover{color:var(--text)}
+.mb{padding:1.5rem;overflow-y:auto;flex:1}
+.mf{padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:.75rem;justify-content:flex-end;flex-shrink:0}
+.alert{border-radius:6px;padding:.75rem 1rem;font-size:.83rem;margin-bottom:1rem;display:none}
+.alert.show{display:block}.alert.error{background:#fef2f2;color:var(--red);border:1px solid #fecaca}
+.alert.success{background:#f0fdf4;color:var(--green-dark);border:1px solid #bbf7d0}
+.empty{text-align:center;padding:2.5rem;color:var(--text-light);font-size:.88rem}
+.ei{font-size:2.5rem;margin-bottom:.75rem}
+.loading{text-align:center;padding:2rem;color:var(--text-light)}
+.unassigned-banner{background:#fff8e1;border:1px solid #ffe082;border-radius:6px;padding:.85rem 1rem;font-size:.83rem;color:#7c5a00;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+</style>
+</head>
+<body>
+<div class="flag"><span></span><span></span><span></span><span></span><span></span></div>
+<div class="layout">
+
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo">🏛️</div>
+    <div><div class="sb-brand-name">Parliament of Kenya</div><div class="sb-brand-sub">Admin Portal</div></div>
+  </div>
+  <div class="sb-user">
+    <div class="sb-av" id="sbAv">?</div>
+    <div><div class="sb-un" id="sbName">Loading…</div><div class="sb-ur">System Administrator</div></div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-sec">Dashboard</div>
+    <a class="sb-a active" onclick="show('overview',this)"><span class="sb-ai">🏠</span>Overview</a>
+    <a class="sb-a" onclick="show('interns',this)"><span class="sb-ai">👥</span>Attachees & Interns</a>
+    <a class="sb-a" onclick="show('assign',this)"><span class="sb-ai">🔗</span>Assign Supervisors <span class="bc" id="unBadge">0</span></a>
+    <a class="sb-a" onclick="show('supervisors',this)"><span class="sb-ai">👔</span>Supervisors</a>
+    <div class="sb-sec">Management</div>
+    <a class="sb-a" onclick="show('payslips',this)"><span class="sb-ai">💰</span>Payslips</a>
+    <a class="sb-a" onclick="show('logs',this)"><span class="sb-ai">📋</span>Task Logs</a>
+    <a class="sb-a" onclick="show('evals',this)"><span class="sb-ai">⭐</span>Evaluations</a>
+    <a class="sb-a" href="reports.html"><span class="sb-ai">📊</span>Annual Reports</a>
+  </nav>
+  <div class="sb-bot"><button class="sb-lo" onclick="logout()">Sign Out</button></div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div class="tb-title" id="pgTitle">System Overview</div>
+    <div class="tb-date" id="tbDate"></div>
+  </div>
+  <div class="content">
+
+    <!-- OVERVIEW -->
+    <div class="page active" id="pg-overview">
+      <div class="g4">
+        <div class="sc"><div class="sl">Active Students</div><div class="sn" id="st-s">—</div><div class="ss">Attachment</div></div>
+        <div class="sc g"><div class="sl">Active Interns</div><div class="sn" id="st-i">—</div><div class="ss">Contract</div></div>
+        <div class="sc go"><div class="sl">Unassigned</div><div class="sn" id="st-u">—</div><div class="ss">Need supervisor</div></div>
+        <div class="sc r"><div class="sl">Completing</div><div class="sn" id="st-c">—</div><div class="ss">This month</div></div>
+      </div>
+      <div class="tc">
+        <div class="card">
+          <div class="ch"><div class="ct">By Department</div></div>
+          <div class="cb" id="deptBars"><div class="loading">Loading…</div></div>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ct">Recently Registered</div><button class="btn bo sm" onclick="show('interns',null)">View All</button></div>
+          <div class="cb" id="recentList"><div class="loading">Loading…</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INTERNS -->
+    <div class="page" id="pg-interns">
+      <div class="card">
+        <div class="ch">
+          <div class="ct">All Attachees & Interns</div>
+          <div class="fr" style="margin:0">
+            <select id="f-dept" onchange="loadInterns()">
+              <option value="">All Departments</option>
+              <option>ICT Department</option><option>Human Resource</option><option>Finance Department</option>
+              <option>Legal Services</option><option>Administration</option><option>Communications</option><option>Library & Research</option>
+            </select>
+            <select id="f-role" onchange="loadInterns()">
+              <option value="">All Types</option><option value="student">Students</option><option value="intern">Interns</option>
+            </select>
+            <select id="f-un" onchange="loadInterns()">
+              <option value="">All</option><option value="true">Unassigned only</option>
+            </select>
+          </div>
+        </div>
+        <div class="cb" id="internsWrap"><div class="loading">Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- ASSIGN -->
+    <div class="page" id="pg-assign">
+      <div class="card">
+        <div class="ch">
+          <div class="ct">Assign Supervisors</div>
+          <select id="f-assign-dept" onchange="loadAssign()" style="padding:.45rem .85rem;border:1.5px solid var(--border);border-radius:6px;font-size:.82rem;font-family:inherit;outline:none">
+            <option value="">All Departments</option>
+            <option>ICT Department</option><option>Human Resource</option><option>Finance Department</option>
+            <option>Legal Services</option><option>Administration</option><option>Communications</option><option>Library & Research</option>
+          </select>
+        </div>
+        <div class="cb" id="assignWrap"><div class="loading">Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- SUPERVISORS -->
+    <div class="page" id="pg-supervisors">
+      <div class="card">
+        <div class="ch"><div class="ct">Supervisors</div><button class="btn bg sm" onclick="openAddSup()">+ Add Supervisor</button></div>
+        <div class="cb" id="supsWrap"><div class="loading">Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- PAYSLIPS -->
+    <div class="page" id="pg-payslips">
+      <div class="card">
+        <div class="ch"><div class="ct">Payslips</div><button class="btn bn sm" onclick="openPayslip()">+ Issue Payslip</button></div>
+        <div class="cb" id="payWrap"><div class="loading">Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- LOGS -->
+    <div class="page" id="pg-logs">
+      <div class="card">
+        <div class="ch"><div class="ct">All Task Logs</div></div>
+        <div class="cb" id="logsWrap"><div class="loading">Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- EVALS -->
+    <div class="page" id="pg-evals">
+      <div class="card">
+        <div class="ch"><div class="ct">All Evaluations</div></div>
+        <div class="cb" id="evalsWrap"><div class="loading">Loading…</div></div>
+      </div>
+    </div>
+
+  </div>
+</main>
+</div>
+
+<!-- ASSIGN MODAL -->
+<div class="mo" id="mo-assign">
+  <div class="md">
+    <div class="mh" style="background:var(--navy)"><h3 style="color:#fff">🔗 Assign Supervisor</h3><button class="mx" style="color:rgba(255,255,255,.6)" onclick="cm('mo-assign')">✕</button></div>
+    <div class="mb">
+      <input type="hidden" id="a-uid">
+      <div id="a-detail" style="background:var(--cream);border-radius:6px;padding:.85rem;margin-bottom:1.25rem;font-size:.85rem;line-height:1.6"></div>
+      <div class="alert" id="a-alert"></div>
+      <div class="field"><label>Select Supervisor *</label><select id="a-sup"><option value="">— Select Supervisor —</option></select></div>
+      <div class="field"><label>Department</label>
+        <select id="a-dept">
+          <option value="">— Keep current —</option>
+          <option>ICT Department</option><option>Human Resource</option><option>Finance Department</option>
+          <option>Legal Services</option><option>Administration</option><option>Communications</option><option>Library & Research</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div class="field"><label>Start Date</label><input type="date" id="a-start"></div>
+        <div class="field"><label>End Date (optional)</label><input type="date" id="a-end"></div>
+      </div>
+    </div>
+    <div class="mf"><button class="btn bo" onclick="cm('mo-assign')">Cancel</button><button class="btn bg" onclick="doAssign()">Assign Supervisor</button></div>
+  </div>
+</div>
+
+<!-- ADD SUP MODAL -->
+<div class="mo" id="mo-sup">
+  <div class="md">
+    <div class="mh" style="background:var(--navy)"><h3 style="color:#fff">👔 Create Supervisor Account</h3><button class="mx" style="color:rgba(255,255,255,.6)" onclick="cm('mo-sup')">✕</button></div>
+    <div class="mb">
+      <div class="alert" id="sup-alert"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div class="field"><label>First Name *</label><input type="text" id="sup-fn" placeholder="First name"></div>
+        <div class="field"><label>Last Name *</label><input type="text" id="sup-ln" placeholder="Last name"></div>
+      </div>
+      <div class="field"><label>Email *</label><input type="email" id="sup-em" placeholder="email@parliament.go.ke"></div>
+      <div class="field"><label>Job Title *</label><input type="text" id="sup-jt" placeholder="e.g. Senior Systems Analyst"></div>
+      <div class="field"><label>Department *</label>
+        <select id="sup-dt">
+          <option value="">— Select —</option>
+          <option>ICT Department</option><option>Human Resource</option><option>Finance Department</option>
+          <option>Legal Services</option><option>Administration</option><option>Communications</option><option>Library & Research</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div class="field"><label>Phone *</label><input type="text" id="sup-ph" placeholder="+254 7xx xxx xxx"></div>
+        <div class="field"><label>Staff ID *</label><input type="text" id="sup-id" placeholder="e.g. SUP-001"></div>
+      </div>
+      <div class="field"><label>Password * (min 8 chars)</label><input type="password" id="sup-pw" placeholder="Strong password"></div>
+      <div class="field"><label>Confirm Password *</label><input type="password" id="sup-pwc" placeholder="Repeat password"></div>
+    </div>
+    <div class="mf"><button class="btn bo" onclick="cm('mo-sup')">Cancel</button><button class="btn bg" onclick="doAddSup()">Create Account</button></div>
+  </div>
+</div>
+
+<!-- PAYSLIP MODAL -->
+<div class="mo" id="mo-pay">
+  <div class="md">
+    <div class="mh" style="background:var(--navy)"><h3 style="color:#fff">💰 Issue Payslip</h3><button class="mx" style="color:rgba(255,255,255,.6)" onclick="cm('mo-pay')">✕</button></div>
+    <div class="mb">
+      <div class="alert" id="pay-alert"></div>
+      <div class="field"><label>Contract Intern *</label><select id="pay-int"><option value="">— Select Intern —</option></select></div>
+      <div class="field"><label>Month * (e.g. May 2026)</label><input type="text" id="pay-month" placeholder="May 2026"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div class="field"><label>Period Start</label><input type="date" id="pay-s"></div>
+        <div class="field"><label>Period End</label><input type="date" id="pay-e"></div>
+        <div class="field"><label>Gross (KES) *</label><input type="number" id="pay-g" placeholder="35000" oninput="calcNet()"></div>
+        <div class="field"><label>NHIF (KES)</label><input type="number" id="pay-nhif" placeholder="1700" oninput="calcNet()"></div>
+        <div class="field"><label>NSSF (KES)</label><input type="number" id="pay-nssf" placeholder="2160" oninput="calcNet()"></div>
+        <div class="field"><label>Net Pay (auto)</label><input type="number" id="pay-net" readonly style="background:var(--cream)"></div>
+      </div>
+    </div>
+    <div class="mf"><button class="btn bo" onclick="cm('mo-pay')">Cancel</button><button class="btn bn" onclick="doPayslip()">Issue Payslip</button></div>
+  </div>
+</div>
+
+<script>
+const titles = {overview:'System Overview',interns:'Attachees & Interns',assign:'Assign Supervisors',supervisors:'Supervisors',payslips:'Payslips',logs:'Task Logs',evals:'Evaluations'};
+
+document.addEventListener('DOMContentLoaded', async () => {
+  if(!requireAuth('admin')) return;
+  document.getElementById('tbDate').textContent = new Date().toLocaleDateString('en-KE',{weekday:'short',day:'numeric',month:'long',year:'numeric'});
+  const u = getUser();
+  document.getElementById('sbName').textContent = `${u.firstName} ${u.lastName}`;
+  document.getElementById('sbAv').textContent = (u.firstName[0]+u.lastName[0]).toUpperCase();
+  loadOverview();
+});
+
+function show(id, link) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sb-a').forEach(a=>a.classList.remove('active'));
+  document.getElementById('pg-'+id).classList.add('active');
+  if(link) link.classList.add('active');
+  document.getElementById('pgTitle').textContent = titles[id]||id;
+  if(id==='interns')     loadInterns();
+  if(id==='assign')      loadAssign();
+  if(id==='supervisors') loadSups();
+  if(id==='payslips')    loadPays();
+  if(id==='logs')        loadLogs();
+  if(id==='evals')       loadEvals();
+}
+
+function om(id){ document.getElementById(id).classList.add('open'); }
+function cm(id){ document.getElementById(id).classList.remove('open'); }
+function calcNet(){ const g=+document.getElementById('pay-g').value||0,h=+document.getElementById('pay-nhif').value||0,n=+document.getElementById('pay-nssf').value||0; document.getElementById('pay-net').value=g-h-n; }
+function setAlert(id,type,msg){ const el=document.getElementById(id); if(el){ el.className='alert '+type+' show'; el.textContent=msg; } }
+
+// ── OVERVIEW ──
+async function loadOverview() {
+  const r = await Admin.stats();
+  if(!r?.ok) return;
+  const s = r.data.data;
+  document.getElementById('st-s').textContent = s.students??0;
+  document.getElementById('st-i').textContent = s.interns??0;
+  document.getElementById('st-u').textContent = s.unassigned??0;
+  document.getElementById('st-c').textContent = s.completing??0;
+  document.getElementById('unBadge').textContent = s.unassigned??0;
+
+  const dEl = document.getElementById('deptBars');
+  const max = Math.max(...(s.deptBreakdown||[]).map(d=>d.total),1);
+  if(s.deptBreakdown?.length) {
+    dEl.innerHTML = s.deptBreakdown.map(d=>`<div class="db-row"><div class="db-lbl">${esc(d.dept.replace(' Department','').replace(' & ',' & '))}</div><div class="db-track"><div class="db-fill" data-w="${Math.round((d.total/max)*100)}%"></div></div><div class="db-n">${d.total}</div></div>`).join('');
+    setTimeout(()=>document.querySelectorAll('.db-fill').forEach(b=>b.style.width=b.dataset.w),200);
+  } else { dEl.innerHTML='<div class="empty">No data yet.</div>'; }
+
+  const rEl = document.getElementById('recentList');
+  if(s.recent?.length) {
+    rEl.innerHTML = s.recent.map(a=>`<div class="act-item">
+      <div class="act-dot ${a.supervisor?'g':'o'}"></div>
+      <div style="flex:1">
+        <div class="act-txt"><strong>${esc(a.firstName)} ${esc(a.lastName)}</strong> · <span class="badge ${a.role}">${a.role}</span></div>
+        <div class="act-time">${esc(a.department||'No dept')} · ${a.supervisor?'✅ Assigned':'⚠️ No supervisor'} · ${fmt(a.createdAt)}</div>
+      </div>
+      ${!a.supervisor?`<button class="btn bgo sm" onclick="openAssign('${a._id}','${esc(a.firstName+' '+a.lastName)}','${a.role}','${esc(a.department||'')}')">Assign</button>`:''}
+    </div>`).join('');
+  } else { rEl.innerHTML='<div class="empty"><div class="ei">🎉</div>No registrations yet.</div>'; }
+}
+
+// ── INTERNS ──
+async function loadInterns() {
+  const w = document.getElementById('internsWrap');
+  w.innerHTML='<div class="loading">Loading…</div>';
+  const dept = document.getElementById('f-dept').value;
+  const role = document.getElementById('f-role').value;
+  const un   = document.getElementById('f-un').value;
+  let q='?';
+  if(dept) q+=`department=${encodeURIComponent(dept)}&`;
+  if(role) q+=`role=${role}&`;
+  if(un)   q+=`unassigned=true&`;
+  const r = await Admin.interns(q);
+  const list = r?.data?.data||[];
+  if(!list.length){ w.innerHTML='<div class="empty"><div class="ei">👥</div>No records found.</div>'; return; }
+  w.innerHTML=`<table>
+    <thead><tr><th>Name</th><th>Type</th><th>Department</th><th>Institution</th><th>Registered</th><th>Supervisor</th><th>Actions</th></tr></thead>
+    <tbody>${list.map(u=>`<tr>
+      <td><div style="display:flex;align-items:center;gap:.6rem">
+        <div class="av" style="background:${u.role==='intern'?'var(--gold)':'var(--navy)'}${u.role==='intern'?';color:#1a2332':''}">${(u.firstName[0]+u.lastName[0]).toUpperCase()}</div>
+        <div><div style="font-weight:600">${esc(u.firstName)} ${esc(u.lastName)}</div><div style="font-size:.72rem;color:var(--text-light)">${esc(u.email)}</div></div>
+      </div></td>
+      <td><span class="badge ${u.role}">${u.role}</span></td>
+      <td style="font-size:.8rem">${esc(u.department||'—')}</td>
+      <td style="font-size:.78rem">${esc(u.institution||'—')}</td>
+      <td style="font-size:.78rem">${fmt(u.createdAt)}</td>
+      <td>${u.supervisor?`<span class="badge yes">✓ ${esc(u.supervisor.firstName+' '+u.supervisor.lastName)}</span>`:`<span class="badge no">⚠ None</span>`}</td>
+      <td style="display:flex;gap:.4rem;flex-wrap:wrap">
+        <button class="btn bgo sm" onclick="openAssign('${u._id}','${esc(u.firstName+' '+u.lastName)}','${u.role}','${esc(u.department||'')}')">${u.supervisor?'Reassign':'Assign'}</button>
+        ${u.supervisor?`<button class="btn bo sm" onclick="doUnassign('${u._id}')">Remove</button>`:''}
+      </td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+// ── ASSIGN PAGE ──
+async function loadAssign() {
+  const w = document.getElementById('assignWrap');
+  w.innerHTML='<div class="loading">Loading…</div>';
+  const dept = document.getElementById('f-assign-dept').value;
+  let q='?'; if(dept) q+=`department=${encodeURIComponent(dept)}&`;
+  const r = await Admin.interns(q);
+  const list = r?.data?.data||[];
+  if(!list.length){ w.innerHTML='<div class="empty"><div class="ei">👥</div>No attachees registered yet.</div>'; return; }
+  const unassigned = list.filter(u=>!u.supervisor);
+  const assigned   = list.filter(u=>u.supervisor);
+  let html='';
+  if(unassigned.length) {
+    html+=`<div class="unassigned-banner"><span>⚠️ <strong>${unassigned.length}</strong> attachee${unassigned.length!==1?'s':''} need a supervisor assigned.</span></div>`;
+    html+=`<div style="font-size:.78rem;font-weight:700;color:var(--red);margin-bottom:.75rem;text-transform:uppercase;letter-spacing:.06em">⚠ Needs Supervisor (${unassigned.length})</div>`;
+    html+=`<table style="margin-bottom:1.5rem"><thead><tr><th>Name</th><th>Type</th><th>Department</th><th>Institution</th><th>Registered</th><th></th></tr></thead><tbody>`;
+    html+=unassigned.map(u=>`<tr style="background:#fffdf0">
+      <td><div style="font-weight:600">${esc(u.firstName)} ${esc(u.lastName)}</div><div style="font-size:.72rem;color:var(--text-light)">${esc(u.email)}</div></td>
+      <td><span class="badge ${u.role}">${u.role}</span></td>
+      <td style="font-size:.8rem">${esc(u.department||'—')}</td>
+      <td style="font-size:.78rem">${esc(u.institution||'—')}</td>
+      <td style="font-size:.78rem">${fmt(u.createdAt)}</td>
+      <td><button class="btn bgo sm" onclick="openAssign('${u._id}','${esc(u.firstName+' '+u.lastName)}','${u.role}','${esc(u.department||'')}')">Assign Supervisor →</button></td>
+    </tr>`).join('');
+    html+='</tbody></table>';
+  }
+  if(assigned.length) {
+    html+=`<div style="font-size:.78rem;font-weight:700;color:var(--green);margin-bottom:.75rem;text-transform:uppercase;letter-spacing:.06em">✅ Assigned (${assigned.length})</div>`;
+    html+=`<table><thead><tr><th>Name</th><th>Type</th><th>Department</th><th>Supervisor</th><th>Period</th><th></th></tr></thead><tbody>`;
+    html+=assigned.map(u=>`<tr>
+      <td style="font-weight:600">${esc(u.firstName)} ${esc(u.lastName)}</td>
+      <td><span class="badge ${u.role}">${u.role}</span></td>
+      <td style="font-size:.8rem">${esc(u.department||'—')}</td>
+      <td style="font-size:.8rem;color:var(--green);font-weight:600">${esc(u.supervisor.firstName+' '+u.supervisor.lastName)}</td>
+      <td style="font-size:.78rem">${fmt(u.startDate)} → ${fmt(u.endDate)}</td>
+      <td><button class="btn bo sm" onclick="openAssign('${u._id}','${esc(u.firstName+' '+u.lastName)}','${u.role}','${esc(u.department||'')}')">Reassign</button></td>
+    </tr>`).join('');
+    html+='</tbody></table>';
+  }
+  w.innerHTML = html||'<div class="empty">No records.</div>';
+}
+
+// ── ASSIGN MODAL ──
+async function openAssign(id, name, role, dept) {
+  document.getElementById('a-uid').value = id;
+  document.getElementById('a-alert').className='alert';
+  document.getElementById('a-detail').innerHTML = `<strong>${esc(name)}</strong><br>Type: <span class="badge ${role}">${role}</span> · Department: <strong>${esc(dept||'Not set')}</strong>`;
+  if(dept) document.getElementById('a-dept').value=dept;
+  document.getElementById('a-start').valueAsDate=new Date();
+  // Load supervisors (filter by dept if set)
+  const r = await Admin.supervisors(dept?`?department=${encodeURIComponent(dept)}`:'');
+  const all = await Admin.supervisors('');
+  const supList = (r?.data?.data?.length ? r.data.data : all?.data?.data)||[];
+  const sel = document.getElementById('a-sup');
+  sel.innerHTML='<option value="">— Select Supervisor —</option>';
+  if(supList.length) {
+    supList.forEach(s=>{ const o=document.createElement('option'); o.value=s._id; o.textContent=`${s.firstName} ${s.lastName} · ${s.department} (${s.assigneeCount} assignees)`; sel.appendChild(o); });
+  } else { sel.innerHTML='<option value="">No supervisors yet — add one first</option>'; }
+  om('mo-assign');
+}
+
+async function doAssign() {
+  const id   = document.getElementById('a-uid').value;
+  const supId= document.getElementById('a-sup').value;
+  const dept = document.getElementById('a-dept').value;
+  const s    = document.getElementById('a-start').value;
+  const e    = document.getElementById('a-end').value;
+  if(!supId){ setAlert('a-alert','error','Please select a supervisor.'); return; }
+  const body = { supervisorId: supId };
+  if(dept) body.department=dept;
+  if(s)    body.startDate=s;
+  if(e)    body.endDate=e;
+  const r = await Admin.assignSupervisor(id, body);
+  if(r?.ok){ cm('mo-assign'); toast('Supervisor assigned ✓'); loadOverview(); const pg=document.querySelector('.page.active'); if(pg?.id==='pg-assign') loadAssign(); if(pg?.id==='pg-interns') loadInterns(); }
+  else setAlert('a-alert','error',r?.data?.message||'Failed.');
+}
+
+async function doUnassign(id) {
+  if(!confirm('Remove supervisor from this attachee?')) return;
+  const r = await Admin.unassignSupervisor(id);
+  if(r?.ok){ toast('Supervisor removed'); loadInterns(); loadOverview(); }
+  else toast(r?.data?.message||'Failed','error');
+}
+
+// ── SUPERVISORS ──
+async function loadSups() {
+  const w = document.getElementById('supsWrap');
+  w.innerHTML='<div class="loading">Loading…</div>';
+  const r = await Admin.supervisors();
+  const list = r?.data?.data||[];
+  if(!list.length){ w.innerHTML='<div class="empty"><div class="ei">👔</div>No supervisors yet. Create the first one.</div>'; return; }
+  w.innerHTML=`<table><thead><tr><th>Name</th><th>Job Title</th><th>Department</th><th>Email</th><th>Assignees</th><th></th></tr></thead><tbody>
+  ${list.map(s=>`<tr>
+    <td style="font-weight:600">${esc(s.firstName)} ${esc(s.lastName)}</td>
+    <td style="font-size:.8rem">${esc(s.jobTitle||'—')}</td>
+    <td style="font-size:.8rem">${esc(s.department||'—')}</td>
+    <td style="font-size:.78rem">${esc(s.email)}</td>
+    <td style="text-align:center;font-weight:700;color:var(--navy)">${s.assigneeCount??0}</td>
+    <td><button class="btn br sm" onclick="delSup('${s._id}','${esc(s.firstName+' '+s.lastName)}')">Delete</button></td>
+  </tr>`).join('')}</tbody></table>`;
+}
+
+function openAddSup() {
+  document.getElementById('sup-alert').className='alert';
+  ['sup-fn','sup-ln','sup-em','sup-jt','sup-ph','sup-id','sup-pw','sup-pwc'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('sup-dt').value='';
+  om('mo-sup');
+}
+
+async function doAddSup() {
+  const pw  = document.getElementById('sup-pw').value;
+  const pwc = document.getElementById('sup-pwc').value;
+  if(pw!==pwc){ setAlert('sup-alert','error','Passwords do not match.'); return; }
+  const body={firstName:document.getElementById('sup-fn').value.trim(),lastName:document.getElementById('sup-ln').value.trim(),email:document.getElementById('sup-em').value.trim(),jobTitle:document.getElementById('sup-jt').value.trim(),department:document.getElementById('sup-dt').value,phone:document.getElementById('sup-ph').value.trim(),idNumber:document.getElementById('sup-id').value.trim(),password:pw};
+  if(!body.firstName||!body.lastName||!body.email||!body.jobTitle||!body.department||!body.phone||!body.idNumber||!body.password){ setAlert('sup-alert','error','All fields are required.'); return; }
+  const r = await Admin.addSupervisor(body);
+  if(r?.ok){ cm('mo-sup'); toast('Supervisor created ✓'); loadSups(); }
+  else setAlert('sup-alert','error',r?.data?.message||'Failed.');
+}
+
+async function delSup(id,name) {
+  if(!confirm(`Delete supervisor "${name}"? Their assignees will be unassigned.`)) return;
+  const r = await Admin.deleteSupervisor(id);
+  if(r?.ok){ toast('Supervisor deleted'); loadSups(); loadOverview(); }
+  else toast(r?.data?.message||'Failed','error');
+}
+
+// ── PAYSLIPS ──
+async function loadPays() {
+  const w=document.getElementById('payWrap');
+  w.innerHTML='<div class="loading">Loading…</div>';
+  const r=await Admin.payslips();
+  const list=r?.data?.data||[];
+  if(!list.length){ w.innerHTML='<div class="empty"><div class="ei">💰</div>No payslips yet.</div>'; return; }
+  w.innerHTML=`<table><thead><tr><th>Intern</th><th>Month</th><th>Gross</th><th>NHIF</th><th>NSSF</th><th>Net</th><th>Status</th><th></th></tr></thead><tbody>
+  ${list.map(p=>`<tr>
+    <td style="font-weight:600">${p.intern?esc(p.intern.firstName+' '+p.intern.lastName):'—'}</td>
+    <td>${esc(p.month)}</td><td>KES ${(p.gross||0).toLocaleString()}</td>
+    <td style="color:var(--red)">- ${(p.nhif||0).toLocaleString()}</td>
+    <td style="color:var(--red)">- ${(p.nssf||0).toLocaleString()}</td>
+    <td style="font-weight:700;color:var(--green)">KES ${(p.net||0).toLocaleString()}</td>
+    <td><span class="badge ${p.status}">${p.status}</span></td>
+    <td>${p.status!=='paid'?`<button class="btn bg sm" onclick="markPaid('${p._id}')">Mark Paid</button>`:''}</td>
+  </tr>`).join('')}</tbody></table>`;
+}
+
+async function openPayslip() {
+  const r=await Admin.interns('?role=intern');
+  const sel=document.getElementById('pay-int');
+  sel.innerHTML='<option value="">— Select Intern —</option>'+(r?.data?.data||[]).map(u=>`<option value="${u._id}">${esc(u.firstName+' '+u.lastName)}</option>`).join('');
+  document.getElementById('pay-alert').className='alert';
+  om('mo-pay');
+}
+
+async function doPayslip() {
+  const body={internId:document.getElementById('pay-int').value,month:document.getElementById('pay-month').value.trim(),periodStart:document.getElementById('pay-s').value,periodEnd:document.getElementById('pay-e').value,gross:+document.getElementById('pay-g').value,nhif:+document.getElementById('pay-nhif').value,nssf:+document.getElementById('pay-nssf').value};
+  if(!body.internId||!body.month||!body.gross){ setAlert('pay-alert','error','Intern, month and gross are required.'); return; }
+  const r=await Payslips.create(body);
+  if(r?.ok){ cm('mo-pay'); toast('Payslip issued ✓'); loadPays(); }
+  else setAlert('pay-alert','error',r?.data?.message||'Failed.');
+}
+
+async function markPaid(id) {
+  if(!confirm('Mark as paid?')) return;
+  const r=await Payslips.markPaid(id);
+  if(r?.ok){ toast('Marked paid ✓'); loadPays(); }
+  else toast(r?.data?.message||'Failed','error');
+}
+
+// ── LOGS & EVALS ──
+async function loadLogs() {
+  const w=document.getElementById('logsWrap');
+  w.innerHTML='<div class="loading">Loading…</div>';
+  const r=await Logs.all();
+  const list=r?.data?.data||[];
+  if(!list.length){ w.innerHTML='<div class="empty"><div class="ei">📋</div>No logs yet.</div>'; return; }
+  w.innerHTML=`<table><thead><tr><th>Student</th><th>Date</th><th>Title</th><th>Category</th><th>Status</th><th>Feedback</th></tr></thead><tbody>
+  ${list.map(l=>`<tr>
+    <td style="font-weight:600">${l.user?esc(l.user.firstName+' '+l.user.lastName):'—'}</td>
+    <td style="font-size:.78rem">${fmt(l.date)}</td><td>${esc(l.title)}</td>
+    <td style="font-size:.78rem">${esc(l.category||'—')}</td>
+    <td><span class="badge ${l.status==='reviewed'?'yes':'no'}">${l.status}</span></td>
+    <td style="font-size:.78rem;max-width:200px">${esc(l.supervisorFeedback||'—')}</td>
+  </tr>`).join('')}</tbody></table>`;
+}
+
+async function loadEvals() {
+  const w=document.getElementById('evalsWrap');
+  w.innerHTML='<div class="loading">Loading…</div>';
+  const r=await Evals.all();
+  const list=r?.data?.data||[];
+  if(!list.length){ w.innerHTML='<div class="empty"><div class="ei">⭐</div>No evaluations yet.</div>'; return; }
+  w.innerHTML=`<table><thead><tr><th>Student</th><th>Period</th><th>Supervisor</th><th>Recommendation</th><th>Date</th></tr></thead><tbody>
+  ${list.map(e=>`<tr>
+    <td style="font-weight:600">${e.intern?esc(e.intern.firstName+' '+e.intern.lastName):'—'}</td>
+    <td>${esc(e.period)}</td>
+    <td style="font-size:.8rem">${e.supervisor?esc(e.supervisor.firstName+' '+e.supervisor.lastName):'—'}</td>
+    <td style="font-size:.8rem">${esc(e.recommendation)}</td>
+    <td style="font-size:.78rem">${fmt(e.createdAt)}</td>
+  </tr>`).join('')}</tbody></table>`;
+}
+</script>
+</body>
+</html>
