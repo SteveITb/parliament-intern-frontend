@@ -87,7 +87,14 @@
     font-size: 2rem;
     animation: fadeDown 0.6s ease both;
   }
-
+.logo-img {
+  width: 110px;
+  height: 110px;
+  object-fit: contain;
+  margin-bottom: 1rem;
+  animation: fadeDown 0.6s ease both;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+}
   .header-badge {
     font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
     font-size: 11px;
@@ -510,7 +517,11 @@
 <!-- ── HEADER ── -->
 <header>
   <div class="header-inner">
-    <img src="https://www.parliament.go.ke/sites/default/files/court%20of%20arms.png" alt="Parliament of Kenya Coat of Arms" class="coat-of-arms" style="width:72px;height:72px;object-fit:contain;border-radius:50%;border:2px solid var(--kenya-gold);background:rgba(201,168,76,0.1);padding:4px;">
+    <img 
+  src="logo.png" 
+  alt="Kenya Coat of Arms — Parliament of Kenya" 
+  class="logo-img"
+>
     <p class="header-badge">Republic of Kenya &nbsp;·&nbsp; Parliament</p>
     <h1>Intern &amp; Attachment<br><em>Management Portal</em></h1>
     <p class="header-sub">Select your assigned department below to access your registration, login, and personal dashboard.</p>
